@@ -1,6 +1,7 @@
 ﻿using Editor.GameProject;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,13 +18,21 @@ using System.Windows.Shapes;
 namespace Editor.Editors
 {
     /// <summary>
-    /// Interaction logic for ProjectLayoutView.xaml
+    /// Interaction logic for WorldEditorView.xaml
     /// </summary>
-    public partial class ProjectLayoutView : UserControl
+    public partial class WorldEditorView : UserControl
     {
-        public ProjectLayoutView()
+        public WorldEditorView()
         {
             InitializeComponent();
+            Loaded += OnWorldEditorViewLoaded;
+        }
+
+        private void OnWorldEditorViewLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnWorldEditorViewLoaded;
+            Focus();
+            ((INotifyCollectionChanged)Project.UndoRedo.UndoList).CollectionChanged += (s, e) => Focus();
         }
     }
 }

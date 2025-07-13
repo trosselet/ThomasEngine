@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Editor.Components;
+using Editor.GameProject;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,13 +18,20 @@ using System.Windows.Shapes;
 namespace Editor.Editors
 {
     /// <summary>
-    /// Interaction logic for WorldEditorView.xaml
+    /// Interaction logic for ProjectLayoutView.xaml
     /// </summary>
-    public partial class WorldEditorView : UserControl
+    public partial class ProjectLayoutView : UserControl
     {
-        public WorldEditorView()
+        public ProjectLayoutView()
         {
             InitializeComponent();
+        }
+
+        private void OnAddGameEntity_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            var vm = btn.DataContext as Scene;
+            vm.AddGameEntityCommand.Execute(new GameEntity(vm) {  Name = "Empty Game Entity"});
         }
     }
 }
