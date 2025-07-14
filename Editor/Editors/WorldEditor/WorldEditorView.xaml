@@ -49,7 +49,7 @@
                               VerticalAlignment="Top" Background="LightGray"/>
 
                 <Grid Grid.Column="0" Margin="0,5,0,0" Grid.Row="1">
-                    <utilities:UndoRedoView DataContext="{Binding UndoRedo}"/>
+                    
                 </Grid>
             </Grid>
 
@@ -69,6 +69,14 @@
                       VerticalAlignment="Top" Background="LightGray"/>
 
                 <Grid Grid.Column="1" Margin="0,5,0,0" Grid.Row="1">
+                    <TabControl>
+                        <TabItem Header="History">
+                            <utilities:UndoRedoView DataContext="{Binding UndoRedo}"/>
+                        </TabItem>
+                        <TabItem Header="Console">
+                            <utilities:LoggerView/>
+                        </TabItem>
+                    </TabControl>
                 </Grid>
             </Grid>
 
