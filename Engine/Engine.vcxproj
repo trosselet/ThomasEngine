@@ -14,6 +14,19 @@
     <ClInclude Include="Common\CommonHeaders.h" />
     <ClInclude Include="Common\Id.h" />
     <ClInclude Include="Common\PrimitiveTypes.h" />
+    <ClInclude Include="Components\ComponentsCommon.h" />
+    <ClInclude Include="Components\Entity.h" />
+    <ClInclude Include="Components\Transform.h" />
+    <ClInclude Include="EngineAPI\GameEntity.h" />
+    <ClInclude Include="EngineAPI\TransformComponent.h" />
+    <ClInclude Include="Utilities\MathTypes.h" />
+    <ClInclude Include="Utilities\Utilities.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Components\Entity.cpp" />
+    <ClCompile Include="Components\Transform.cpp" />
+    <ClCompile Include="EngineAPI\GameEntity.cpp" />
+    <ClCompile Include="EngineAPI\TransformComponent.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -65,6 +78,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)Common</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -93,6 +107,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)Common</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
