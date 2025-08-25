@@ -1,5 +1,5 @@
-#ifndef WINDOW_HEADER__H
-#define WINDOW_HEADER__H
+#ifndef WINDOW_INCLUDE__H
+#define WINDOW_INCLUDE__H
 
 class Window
 {
@@ -36,5 +36,5 @@ private:
 };
 
 
-#endif // !WINDOW_HEADER__H
+#endif // !WINDOW_INCLUDE__H
 

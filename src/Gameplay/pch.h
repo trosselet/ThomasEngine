@@ -11,6 +11,7 @@
 #include "../Tools/Header/Utils.h"
 
 //Engine
+#include "../Engine/Header/GameManager.h"
 
 //Render
 #include "../Render/Header/Window.h"

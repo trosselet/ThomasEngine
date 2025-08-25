@@ -9,5 +9,6 @@
 
 
 #include "../Tools/Header/PrimitiveTypes.h"
+#include "../Tools/Header/Utils.h"
 
 #endif

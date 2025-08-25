@@ -1,5 +1,5 @@
-#ifndef UTILS_HEADER__H
-#define UTILS_HEADER__H
+#ifndef UTILS_INCLUDE__H
+#define UTILS_INCLUDE__H
 
 #include <iostream>
 #include <sstream>
@@ -65,4 +65,4 @@ namespace Utils
 }
 
 
-#endif // !UTILS_HEADER__H
+#endif // !UTILS_INCLUDE__H
