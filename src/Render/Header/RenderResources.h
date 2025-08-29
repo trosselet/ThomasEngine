@@ -1,18 +1,18 @@
 #ifndef DXGI_RESOURCES__H
 #define DXGI_RESOURCES__H
 
-class IDXGIFactory2;
-class IDXGIAdapter;
-class ID3D12Device;
-class IDXGISwapChain3;
-class ID3D12Resource;
-class ID3D12CommandAllocator;
-class ID3D12CommandQueue;
-class ID3D12RootSignature;
-class ID3D12DescriptorHeap;
-class ID3D12PipelineState;
-class ID3D12GraphicsCommandList;
-class ID3D12Fence;
+struct IDXGIFactory2;
+struct IDXGIAdapter;
+struct ID3D12Device;
+struct IDXGISwapChain3;
+struct ID3D12Resource;
+struct ID3D12CommandAllocator;
+struct ID3D12CommandQueue;
+struct ID3D12RootSignature;
+struct ID3D12DescriptorHeap;
+struct ID3D12PipelineState;
+struct ID3D12GraphicsCommandList;
+struct ID3D12Fence;
 
 class RenderResources
 {
@@ -23,13 +23,15 @@ public:
 	IDXGIFactory2* GetDXGIFactory();
 	IDXGIAdapter* GetDXGIAdapters();
 
+	void WaitForGpu();
+
 private:
 	void CreateDXGIFactory();
 	void CreateDXGIAdapters();
 
 	void CreateDevice(IDXGIAdapter* pAdapter);
 	void CreateCommandQueue(ID3D12Device* pDevice);
-	void CreateSwapChain(IDXGIFactory2* pFactory, ID3D12Device* pDevice, ID3D12CommandQueue* pCommandQueue, HWND hwnd, uint32 width, uint32 height);
+	void CreateSwapChain(IDXGIFactory2* pFactory, ID3D12CommandQueue* pCommandQueue, HWND hwnd, uint32 width, uint32 height);
 	void CreateDescriptorHeap(ID3D12Device* pDevice);
 	void CreateRenderTargets(ID3D12Device* pDevice);
 	void CreateCommandAllocator(ID3D12Device* pDevice);

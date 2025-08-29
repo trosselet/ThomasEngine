@@ -1,11 +1,13 @@
 #include "pch.h"
 #include "Header/GameManager.h"
+#include "Header/RenderSystem.h"
 
 #include "Render/Header/Window.h"
 
 GameManager::GameManager(HINSTANCE hInstance)
 {
 	m_pWindow = new Window(hInstance, 1200, 800, L"EngineWindow");
+	if (m_pWindow != nullptr) m_pRenderSystem = new RenderSystem(m_pWindow->GetGraphicEngine());
 }
 
 GameManager::~GameManager()
@@ -47,6 +49,9 @@ void GameManager::GameLoop()
 	{
 		Update();
 		FixedUpdate();
+
+		m_pRenderSystem->Rendering();
+
 	}
 }
 

@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 class Window;
+class RenderSystem;
 
 class GameManager
 {
@@ -28,6 +29,7 @@ private:
 private:
 
 	Window* m_pWindow = nullptr;
+	RenderSystem* m_pRenderSystem = nullptr;
 };
 
 #endif // !GAME_MANAGER_INCLUDE__H

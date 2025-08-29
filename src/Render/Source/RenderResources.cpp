@@ -8,18 +8,69 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateDevice(m_pAdapter);
 	CreateCommandQueue(m_pDevice);
 	CreateDescriptorHeap(m_pDevice);
+	CreateSwapChain(m_pFactory, m_pCommandQueue, hwnd, width, height);
 	m_rtvDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	CreateRenderTargets(m_pDevice);
 	CreateCommandAllocator(m_pDevice);
 
-	CreatePipelineState(m_pDevice, L"../res/Gameplay/shaders/shader.hlsl");
+	CreatePipelineState(m_pDevice, L"../../res/Gameplay/shaders/shader.hlsl");
 }
 
 RenderResources::~RenderResources()
 {
-	delete m_pDevice;
-	delete m_pAdapter;
-	delete m_pFactory;
+	WaitForGpu();
+
+	if (m_pCommandList) { m_pCommandList->Release(); m_pCommandList = nullptr; }
+	if (m_pPipelineState) { m_pPipelineState->Release(); m_pPipelineState = nullptr; }
+	if (m_pRootSignature) { m_pRootSignature->Release(); m_pRootSignature = nullptr; }
+	if (m_pCommandAllocator) { m_pCommandAllocator->Release(); m_pCommandAllocator = nullptr; }
+
+	for (uint32 n = 0; n < FrameCount; n++)
+	{
+		if (m_pRenderTargets[n]) { m_pRenderTargets[n]->Release(); m_pRenderTargets[n] = nullptr; }
+	}
+
+	if (m_pRtvHeap) { m_pRtvHeap->Release(); m_pRtvHeap = nullptr; }
+	if (m_pSwapChain) { m_pSwapChain->Release(); m_pSwapChain = nullptr; }
+	if (m_pCommandQueue) { m_pCommandQueue->Release(); m_pCommandQueue = nullptr; }
+
+	if (m_pFence) { m_pFence->Release(); m_pFence = nullptr; }
+	if (m_fenceEvent)
+	{
+		CloseHandle(m_fenceEvent);
+		m_fenceEvent = nullptr;
+	}
+
+	if (m_pDevice) { m_pDevice->Release(); m_pDevice = nullptr; }
+	if (m_pAdapter) { m_pAdapter->Release(); m_pAdapter = nullptr; }
+	if (m_pFactory) { m_pFactory->Release(); m_pFactory = nullptr; }
+
+	IDXGIDebug1* dxgiDebug;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
+	{
+		dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+		dxgiDebug->Release();
+	}
+}
+
+void RenderResources::WaitForGpu()
+{
+	if (m_pCommandQueue && m_pFence)
+	{
+		UINT64 fenceValue = m_fenceValue + 1;
+		if (SUCCEEDED(m_pCommandQueue->Signal(m_pFence, fenceValue)))
+		{
+			m_fenceValue = fenceValue;
+			if (m_pFence->GetCompletedValue() < fenceValue)
+			{
+				if (m_fenceEvent)
+				{
+					m_pFence->SetEventOnCompletion(fenceValue, m_fenceEvent);
+					WaitForSingleObject(m_fenceEvent, INFINITE);
+				}
+			}
+		}
+	}
 }
 
 IDXGIFactory2* RenderResources::GetDXGIFactory()
@@ -52,6 +103,8 @@ void RenderResources::CreateDXGIAdapters()
 		{
 			Utils::DebugError("Error finding the adapter");
 		}
+
+		pFactory6->Release();
 	}
 	else
 	{
@@ -86,7 +139,7 @@ void RenderResources::CreateCommandQueue(ID3D12Device* pDevice)
 	Utils::DebugError("Error while creating the command queue !");
 }
 
-void RenderResources::CreateSwapChain(IDXGIFactory2* pFactory, ID3D12Device* pDevice, ID3D12CommandQueue* pCommandQueue, HWND hwnd, uint32 width, uint32 height)
+void RenderResources::CreateSwapChain(IDXGIFactory2* pFactory, ID3D12CommandQueue* pCommandQueue, HWND hwnd, uint32 width, uint32 height)
 {
 	DXGI_SWAP_CHAIN_DESC1 desc = {};
 	desc.Width = width;
@@ -104,15 +157,17 @@ void RenderResources::CreateSwapChain(IDXGIFactory2* pFactory, ID3D12Device* pDe
 
 	IDXGISwapChain1* pSwapChain1 = nullptr;
 
-	if (SUCCEEDED(pFactory->CreateSwapChainForHwnd(pDevice, hwnd, &desc, nullptr, nullptr, &pSwapChain1)))
+	if (SUCCEEDED(pFactory->CreateSwapChainForHwnd(pCommandQueue, hwnd, &desc, nullptr, nullptr, &pSwapChain1)))
 	{
 		if (SUCCEEDED(pSwapChain1->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&m_pSwapChain)))
 		{
 			Utils::DebugLog("SwapChain has successfuly been created !");
 			m_frameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+			pSwapChain1->Release();
 			return;
 		}
 		Utils::DebugError("Error while casting the swap chain from swap chain 1 to 3 !");
+		pSwapChain1->Release();
 		return;
 	}
 	Utils::DebugError("Error while creating the swap chain !");

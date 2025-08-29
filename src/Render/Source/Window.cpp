@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Header/Window.h"
 
+#include "Header/GraphicEngine.h"
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
@@ -42,6 +44,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+Window::~Window()
+{
+	if (m_pGraphic)
+	{
+		delete m_pGraphic;
+	}
+}
+
 Window::Window(HINSTANCE hInstance, uint32 width, uint32 height, const wchar_t* windowTitle)
 {
 	m_hInstance = hInstance;
@@ -49,6 +59,7 @@ Window::Window(HINSTANCE hInstance, uint32 width, uint32 height, const wchar_t* 
 	m_height = height;
 	m_windowTitle = windowTitle;
 	Initialize();
+	m_pGraphic = new GraphicEngine(this);	
 }
 
 bool Window::Initialize()
@@ -143,6 +154,11 @@ uint32 Window::GetHeight() const
 HWND Window::GetHWND() const
 {
 	return m_hwnd;
+}
+
+GraphicEngine* Window::GetGraphicEngine() const
+{
+	return m_pGraphic;
 }
 
 

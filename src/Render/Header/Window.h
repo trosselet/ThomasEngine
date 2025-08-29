@@ -1,10 +1,12 @@
 #ifndef WINDOW_INCLUDE__H
 #define WINDOW_INCLUDE__H
 
+class GraphicEngine;
+
 class Window
 {
 public:
-	~Window() = default;
+	~Window();
 
 	Window(HINSTANCE hInstance=nullptr, uint32 width=900, uint32 height=600, const wchar_t* windowTitle=L"Base Window");
 
@@ -14,6 +16,7 @@ public:
 	uint32 GetWidth() const;
 	uint32 GetHeight() const;
 	HWND GetHWND() const;
+	GraphicEngine* GetGraphicEngine() const;
 
 	void OnSize(HWND hwnd, UINT wParam, uint32 width, uint32 height);
 
@@ -32,6 +35,9 @@ private:
 	HWND m_hwnd = nullptr;
 
 	bool m_isOpen = false;
+
+private:
+	GraphicEngine* m_pGraphic = nullptr;
 
 };
 

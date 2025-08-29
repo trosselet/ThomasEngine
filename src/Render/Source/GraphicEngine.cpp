@@ -11,6 +11,7 @@ GraphicEngine::GraphicEngine(const Window* pWindow)
 
 GraphicEngine::~GraphicEngine()
 {
+	delete m_pRender;
 }
 
 void GraphicEngine::BeginDraw()
