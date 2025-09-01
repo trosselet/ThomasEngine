@@ -14,6 +14,10 @@ struct ID3D12PipelineState;
 struct ID3D12GraphicsCommandList;
 struct ID3D12Fence;
 
+struct tagRECT;
+struct D3D12_VIEWPORT;
+
+
 class RenderResources
 {
 public:
@@ -23,7 +27,35 @@ public:
 	IDXGIFactory2* GetDXGIFactory();
 	IDXGIAdapter* GetDXGIAdapters();
 
+	ID3D12Device* GetDevice();
+	ID3D12GraphicsCommandList* GetCommandList();
+	D3D12_RECT GetRect();
+	D3D12_VIEWPORT GetViewport();
+	ID3D12Resource* GetCurrentRenderTarget();
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV();
+	ID3D12DescriptorHeap* GetCbvSrvUavDescriptorHeap();
+
+	ID3D12PipelineState* GetPSO();
+	ID3D12RootSignature* GetRootSignature();
+
+
 	void WaitForGpu();
+
+	void Resize(UINT width, UINT height);
+
+	ID3D12Resource* CreateDefaultBuffer(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		const void* initData,
+		UINT64 byteSize,
+		ID3D12Resource** uploadBuffer,
+		D3D12_RESOURCE_STATES finalState);
+
+	void ExecuteCommandList();
+	bool ResetCommandList();
+	void FlushQueue();
+
+	void Present(bool vsync);
 
 private:
 	void CreateDXGIFactory();
@@ -39,6 +71,9 @@ private:
 	ID3DBlob* CompileShader(const std::wstring& path, const char* target);
 	void CreatePipelineState(ID3D12Device* pDevice, const std::wstring& shaderPath);
 	void CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllocator* pcmdAllocator, ID3D12PipelineState* pPso);
+	void CreateCbvSrvUavDescriptorHeap();
+	void CreateFence(ID3D12Device* pDevice);
+	void UpdateViewport(uint32 width, uint32 height);
 
 private:
 	IDXGIFactory2* m_pFactory = nullptr;
@@ -55,6 +90,7 @@ private:
 	ID3D12CommandQueue* m_pCommandQueue;
 	ID3D12RootSignature* m_pRootSignature;
 	ID3D12DescriptorHeap* m_pRtvHeap;
+	ID3D12DescriptorHeap* m_pCbvSrvUavDescriptorHeap;
 	ID3D12PipelineState* m_pPipelineState;
 	ID3D12GraphicsCommandList* m_pCommandList;
 	UINT m_rtvDescriptorSize;
@@ -64,6 +100,9 @@ private:
 	HANDLE m_fenceEvent;
 	ID3D12Fence* m_pFence;
 	UINT64 m_fenceValue;
+
+	D3D12_RECT m_scissorRect;
+	D3D12_VIEWPORT m_screenViewport;
 
 };
 

@@ -15,6 +15,8 @@ public:
 	static void Run();
 	static void Release();
 
+	static Window& GetWindow() { return *m_pInstance->m_pWindow; };
+
 private:
 	GameManager(HINSTANCE hInstance);
 	~GameManager();

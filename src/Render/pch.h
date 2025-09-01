@@ -12,5 +12,6 @@
 
 #include "../Tools/Header/PrimitiveTypes.h"
 #include "../Tools/Header/Utils.h"
+#include "../Tools/Header/Color.h"
 
 #endif

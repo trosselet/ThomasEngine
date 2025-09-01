@@ -2,6 +2,17 @@
 #define UPLOAD_BUFFER_INCLUDE__H
 
 #include "../Tools/Header/Utils.h"
+#include <DirectXMath.h>
+
+struct ConstantBuffer
+{
+};
+
+struct CB
+{
+    DirectX::XMFLOAT3 pos;
+    DirectX::XMFLOAT4 color;
+};
 
 template<typename T>
 class UploadBuffer

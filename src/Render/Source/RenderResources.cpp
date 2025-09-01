@@ -9,11 +9,17 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateCommandQueue(m_pDevice);
 	CreateDescriptorHeap(m_pDevice);
 	CreateSwapChain(m_pFactory, m_pCommandQueue, hwnd, width, height);
+	CreateFence(m_pDevice);
 	m_rtvDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	CreateRenderTargets(m_pDevice);
 	CreateCommandAllocator(m_pDevice);
 
+#if _DEBUG
 	CreatePipelineState(m_pDevice, L"../../res/Gameplay/shaders/shader.hlsl");
+#else
+	CreatePipelineState(m_pDevice, L"../../../../res/Gameplay/shaders/shader.hlsl");
+#endif
+	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
 }
 
 RenderResources::~RenderResources()
@@ -73,6 +79,202 @@ void RenderResources::WaitForGpu()
 	}
 }
 
+void RenderResources::Resize(UINT width, UINT height)
+{
+	WaitForGpu();
+
+
+	for (UINT i = 0; i < FrameCount; ++i)
+	{
+		if (m_pRenderTargets[i])
+		{
+			m_pRenderTargets[i]->Release();
+		}
+	}
+
+	DXGI_SWAP_CHAIN_DESC desc = {};
+	IDXGISwapChain* pBaseSwapChain = nullptr;
+	if (m_pSwapChain->QueryInterface(IID_PPV_ARGS(&pBaseSwapChain)) == S_OK)
+	{
+		pBaseSwapChain->GetDesc(&desc);
+		pBaseSwapChain->Release();
+	}
+
+	if (m_pSwapChain->ResizeBuffers(FrameCount, width, height, desc.BufferDesc.Format, desc.Flags) != S_OK)
+	{
+		Utils::DebugError("Failed to resize swap chain buffers.");
+		return;
+	}
+
+	IDXGISwapChain3* pSwapChain3 = nullptr;
+	if (m_pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3)) == S_OK)
+	{
+		m_frameIndex = pSwapChain3->GetCurrentBackBufferIndex();
+		pSwapChain3->Release();
+	}
+	else
+	{
+		m_frameIndex = 0;
+	}
+
+	/*if (m_pDepthStencil)
+	{
+		m_pDepthStencil.Reset();
+	}*/
+
+	//CreateDepthStencilResources(width, height);
+
+	CreateRenderTargets(m_pDevice);
+
+	UpdateViewport(width, height);
+}
+
+ID3D12Resource* RenderResources::CreateDefaultBuffer(
+	ID3D12Device* device,
+	ID3D12GraphicsCommandList* cmdList,
+	const void* initData,
+	UINT64 byteSize,
+	ID3D12Resource** uploadBuffer,
+	D3D12_RESOURCE_STATES finalState)
+{
+	ID3D12Resource* defaultBuffer = nullptr;
+
+	/*====================*/
+	/*  DEFAULT heap(GPU) */
+	/*====================*/
+	
+	D3D12_HEAP_PROPERTIES defaultHeapProps = {};
+	defaultHeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	D3D12_RESOURCE_DESC bufferDesc = {};
+	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	bufferDesc.Width = byteSize;
+	bufferDesc.Height = 1;
+	bufferDesc.DepthOrArraySize = 1;
+	bufferDesc.MipLevels = 1;
+	bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+	bufferDesc.SampleDesc.Count = 1;
+	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	HRESULT hr = device->CreateCommittedResource(
+		&defaultHeapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(&defaultBuffer)
+	);
+	if (FAILED(hr)) return nullptr;
+	/*===================*/
+	/*  UPLOAD heap(CPU) */
+	/*===================*/
+	 
+	D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+	uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	hr = device->CreateCommittedResource(
+		&uploadHeapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(uploadBuffer)
+	);
+	if (FAILED(hr)) {
+		defaultBuffer->Release();
+		return nullptr;
+	}
+
+	/*==========================================*/
+	/* Transition DEFAULT : COMMON -> COPY_DEST */
+	/*==========================================*/
+
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Transition.pResource = defaultBuffer;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+	cmdList->ResourceBarrier(1, &barrier);
+
+	/*==========================*/
+	/* Copy CPU -> UploadBuffer */
+	/*==========================*/
+
+	void* mappedData = nullptr;
+	D3D12_RANGE readRange = {};
+	hr = (*uploadBuffer)->Map(0, &readRange, &mappedData);
+	memcpy(mappedData, initData, byteSize);
+	(*uploadBuffer)->Unmap(0, nullptr);
+
+	/*==============================*/
+	/* Copy GPU : Upload -> Default */
+	/*==============================*/
+
+	cmdList->CopyBufferRegion(defaultBuffer, 0, *uploadBuffer, 0, byteSize);
+
+	/*============================================*/
+	/* Transition DEFAULT : COPY_DEST->finalState */
+	/*============================================*/
+
+	barrier.Transition.pResource = defaultBuffer;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrier.Transition.StateAfter = finalState;
+	cmdList->ResourceBarrier(1, &barrier);
+
+	return defaultBuffer;
+}
+
+
+void RenderResources::ExecuteCommandList()
+{
+	ID3D12CommandList* const cmdLists[] = { m_pCommandList };
+	m_pCommandQueue->ExecuteCommandLists(1, cmdLists);
+	m_fenceValue++;
+	m_pCommandQueue->Signal(m_pFence, m_fenceValue);
+}
+
+bool RenderResources::ResetCommandList()
+{
+	m_pCommandAllocator->Reset();
+	GetCommandList()->Reset(m_pCommandAllocator, 0);
+
+	return true;
+}
+
+void RenderResources::FlushQueue()
+{
+	if (!m_pCommandQueue || !m_pFence || !m_fenceEvent)
+		return;
+
+	m_fenceValue++;
+	UINT64 fenceToWait = m_fenceValue;
+
+	if (FAILED(m_pCommandQueue->Signal(m_pFence, fenceToWait)))
+	{
+		Utils::DebugError("Failed to signal fence in FlushQueue.\n");
+		return;
+	}
+
+	if (m_pFence->GetCompletedValue() < fenceToWait)
+	{
+		if (FAILED(m_pFence->SetEventOnCompletion(fenceToWait, m_fenceEvent)))
+		{
+			Utils::DebugError("Failed to set event on completion in FlushQueue.\n");
+			return;
+		}
+
+		WaitForSingleObject(m_fenceEvent, INFINITE);
+	}
+}
+
+void RenderResources::Present(bool vsync)
+{
+	m_pSwapChain->Present(vsync, 0);
+
+	m_frameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+}
+
 IDXGIFactory2* RenderResources::GetDXGIFactory()
 {
 	return m_pFactory;
@@ -81,6 +283,54 @@ IDXGIFactory2* RenderResources::GetDXGIFactory()
 IDXGIAdapter* RenderResources::GetDXGIAdapters()
 {
 	return m_pAdapter;
+}
+
+ID3D12Device* RenderResources::GetDevice()
+{
+	return m_pDevice;
+}
+
+ID3D12GraphicsCommandList* RenderResources::GetCommandList()
+{
+	return m_pCommandList;
+}
+
+D3D12_RECT RenderResources::GetRect()
+{
+	return m_scissorRect;
+}
+
+D3D12_VIEWPORT RenderResources::GetViewport()
+{
+	return m_screenViewport;
+}
+
+ID3D12Resource* RenderResources::GetCurrentRenderTarget()
+{
+	return m_pRenderTargets[m_frameIndex];
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetCurrentRTV()
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuDescHandle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
+	cpuDescHandle.ptr += (size_t)m_rtvDescriptorSize * m_frameIndex;
+
+	return cpuDescHandle;
+}
+
+ID3D12DescriptorHeap* RenderResources::GetCbvSrvUavDescriptorHeap()
+{
+	return m_pCbvSrvUavDescriptorHeap;
+}
+
+ID3D12PipelineState* RenderResources::GetPSO()
+{
+	return m_pPipelineState;
+}
+
+ID3D12RootSignature* RenderResources::GetRootSignature()
+{
+	return m_pRootSignature;
 }
 
 void RenderResources::CreateDXGIFactory()
@@ -285,27 +535,30 @@ void RenderResources::CreatePipelineState(ID3D12Device* pDevice, const std::wstr
 
 	CreateRootSignature(pDevice);
 
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+
 	};
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = { inputElementDescs , _countof(inputElementDescs)};
+	psoDesc.InputLayout = { inputLayout , _countof(inputLayout)};
 	psoDesc.pRootSignature = m_pRootSignature;
 	psoDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
 	psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
 
 
-	D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
+	/*D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
 	depthStencilDesc.DepthEnable = TRUE;
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-	depthStencilDesc.StencilEnable = FALSE;
+	depthStencilDesc.StencilEnable = FALSE;*/
 
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
 	psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
 	psoDesc.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
@@ -325,8 +578,8 @@ void RenderResources::CreatePipelineState(ID3D12Device* pDevice, const std::wstr
 	psoDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 	psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	psoDesc.DepthStencilState = depthStencilDesc;
-	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	/*psoDesc.DepthStencilState = depthStencilDesc;
+	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;*/
 
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -349,4 +602,34 @@ void RenderResources::CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllo
 		m_pCommandList->Close();
 		return;
 	}
+}
+
+void RenderResources::CreateCbvSrvUavDescriptorHeap()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+	heapDesc.NumDescriptors = 1000;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.NodeMask = 0;
+
+	if (FAILED(m_pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_pCbvSrvUavDescriptorHeap))))
+	{
+		Utils::DebugError("Failed to create CBV/SRV/UAV descriptor heap.");
+	}
+}
+
+void RenderResources::CreateFence(ID3D12Device* pDevice)
+{
+	if (m_pDevice->CreateFence(m_fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence)) != S_OK)
+	{
+		Utils::DebugError("Error creating the Device Resources fence, at line: ", __LINE__, ", At file: ", __FILE__);
+	}
+	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+}
+
+void RenderResources::UpdateViewport(uint32 width, uint32 height)
+{
+	m_screenViewport = { 0.0f, 0.0f, static_cast<float32>(width), static_cast<float32>(height), 0.0f, 1.0f };
+	m_scissorRect = { 0, 0, static_cast<uint16>(width), static_cast<uint16>(height) };
 }

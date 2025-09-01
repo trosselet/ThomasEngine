@@ -4,6 +4,9 @@
 class Window;
 class RenderResources;
 
+class Mesh;
+
+
 class Render
 {
 public:
@@ -11,8 +14,10 @@ public:
 	~Render();
 
 	void Clear();
-	void Draw();
+	void Draw(Mesh* pMesh);
 	void Display();
+
+	RenderResources* GetRenderResources();
 
 private:
 	RenderResources* m_pRenderResources = nullptr;

@@ -2,7 +2,10 @@ struct VSInput
 {
     float3 pos : POSITION;
     float4 color : COLOR;
+    float2 uv : TEXCOORD;
+    float3 norm : NORMAL;
 };
+
 
 struct VSOutput
 {
@@ -20,5 +23,5 @@ VSOutput vsmain(VSInput input)
 
 float4 psmain(VSOutput input) : SV_TARGET
 {
-    return input.color; // float4
+    return input.color;
 }

@@ -8,10 +8,13 @@ GameManager::GameManager(HINSTANCE hInstance)
 {
 	m_pWindow = new Window(hInstance, 1200, 800, L"EngineWindow");
 	if (m_pWindow != nullptr) m_pRenderSystem = new RenderSystem(m_pWindow->GetGraphicEngine());
+
+	
 }
 
 GameManager::~GameManager()
 {
+	delete m_pRenderSystem;
 	delete m_pWindow;
 
 }
@@ -45,6 +48,8 @@ void GameManager::Release()
 
 void GameManager::GameLoop()
 {
+	m_pRenderSystem->CreateMesh();
+
 	while (m_pWindow->IsOpen())
 	{
 		Update();
