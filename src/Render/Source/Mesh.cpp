@@ -97,11 +97,6 @@ void Mesh::UploadGeometry()
         }
     }
 
-    for (size_t i = 0; i < m_pGeometry->indicies.size(); ++i) {
-        Utils::DebugLog("Index[", (int)i, "] ", m_pGeometry->indicies[i]);
-    }
-
-
     UploadBuffers(geometryData.data(),
         static_cast<UINT>(m_pGeometry->positions.size()),
         m_pGeometry->indicies.data(),
@@ -143,8 +138,6 @@ void Mesh::UploadBuffers(float32* vertices, UINT vertexCount, uint32* indices, U
         if (SUCCEEDED(m_pIndexBufferUploader->Map(0, &readRange, &mapped)))
         {
             uint32_t* idx = reinterpret_cast<uint32_t*>(mapped);
-            Utils::DebugLog(">>> IB Upload contents (first 6): ",
-                idx[0], idx[1], idx[2], idx[3], idx[4], idx[5]);
             D3D12_RANGE writtenRange = { 0, 0 };
             m_pIndexBufferUploader->Unmap(0, &writtenRange);
         }

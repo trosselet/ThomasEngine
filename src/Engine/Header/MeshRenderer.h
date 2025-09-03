@@ -9,6 +9,7 @@ class Mesh;
 class MeshRenderer
 {
 public:
+	~MeshRenderer();
 
 	void SetRectangle();
 

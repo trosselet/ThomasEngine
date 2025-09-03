@@ -11,6 +11,7 @@ class RenderSystem
 {
 public:
 	RenderSystem(GraphicEngine* pGraphic);
+	~RenderSystem();
 	void Rendering();
 
 	void CreateMesh();

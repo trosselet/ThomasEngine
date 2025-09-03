@@ -11,6 +11,11 @@
 
 #include "../Tools/Header/Color.h"
 
+MeshRenderer::~MeshRenderer()
+{
+	Free();
+}
+
 void MeshRenderer::SetRectangle()
 {
 	Free();
@@ -19,13 +24,8 @@ void MeshRenderer::SetRectangle()
 
 	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, Color::Red);
 
-
-
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
 	m_primitive = true;
-
-
-
 }
 
 void MeshRenderer::Free()
