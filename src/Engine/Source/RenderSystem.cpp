@@ -10,17 +10,6 @@ RenderSystem::RenderSystem(GraphicEngine* pGraphic)
 	m_pGraphic = pGraphic;
 }
 
-RenderSystem::~RenderSystem()
-{
-	for (std::vector<MeshRenderer const*> const& meshRendererLayer : m_meshRenderers)
-	{
-		for (MeshRenderer const* const pMeshRenderer : meshRendererLayer)
-		{
-			delete pMeshRenderer;
-		}
-	}
-}
-
 void RenderSystem::Rendering()
 {
 	m_pGraphic->BeginDraw();

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Header/GameManager.h"
 #include "Header/RenderSystem.h"
+#include "Header/Scene.h"
 
 #include "Render/Header/Window.h"
 
@@ -46,13 +47,36 @@ void GameManager::Release()
 	delete m_pInstance;
 }
 
+std::vector<Scene>& GameManager::GetScenes()
+{
+	return m_pInstance->m_scenes;
+}
+
+Scene& GameManager::GetActiveScene()
+{
+	return *m_pInstance->m_pActiveScene;
+}
+
+float32& GameManager::GetFixedDeltaTime()
+{
+	return m_pInstance->m_fixedDeltaTime;
+}
+
+RenderSystem& GameManager::GetRenderSystem()
+{
+	return *m_pInstance->m_pRenderSystem;
+}
+
 void GameManager::GameLoop()
 {
-	m_pRenderSystem->CreateMesh();
 
 	while (m_pWindow->IsOpen())
 	{
 		Update();
+
+		HandleCreations();
+		HandleDeletions();
+
 		FixedUpdate();
 
 		m_pRenderSystem->Rendering();
@@ -67,4 +91,51 @@ void GameManager::Update()
 
 void GameManager::FixedUpdate()
 {
+}
+
+void GameManager::HandleCreations()
+{
+	for (Scene* const pScene : m_scenesToLoad)
+	{
+		if (pScene->m_toBeUnloaded) continue;
+
+		pScene->m_toBeLoaded = false;
+		pScene->m_loaded = true;
+		m_loadedScenes.push_back(pScene);
+		if (pScene->m_active) m_pNextActiveScene = pScene;
+	}
+	m_scenesToLoad.clear();
+
+	for (Scene* const pScene : m_loadedScenes)
+		pScene->HandleCreation();
+
+	if (m_pNextActiveScene != nullptr)
+	{
+		m_pActiveScene = m_pNextActiveScene;
+		m_pNextActiveScene = nullptr;
+	}
+}
+
+void GameManager::HandleDeletions()
+{
+	for (Scene* const pScene : m_loadedScenes)
+		pScene->HandleDestruction();
+
+	for (uint8 i = 0; i < m_loadedScenes.size(); i++)
+	{
+		Scene& scene = *m_loadedScenes[i];
+		if (scene.m_toBeUnloaded == false) continue;
+
+		if (scene.m_toBeLoaded)
+		{
+			scene.m_toBeLoaded = false;
+			scene.m_toBeUnloaded = false;
+			continue;
+		}
+
+		scene.m_toBeUnloaded = false;
+		scene.m_loaded = false;
+		scene.m_gameObjects.clear();
+		m_loadedScenes.erase(m_loadedScenes.begin() + i--);
+	}
 }

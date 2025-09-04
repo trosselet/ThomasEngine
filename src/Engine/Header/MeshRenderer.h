@@ -1,15 +1,18 @@
 #ifndef MESH_RENDERER_INCLUDE__H
 #define MESH_RENDERER_INCLUDE__H
 
-#include "Header/RenderSystem.h"
+#include "Engine/Header/RenderSystem.h"
+#include "Engine/Header/ComponentBase.h"
 
 struct Geometry;
 class Mesh;
 
-class MeshRenderer
+struct MeshRenderer : ComponentBase<Component::MeshRenderer>
 {
 public:
 	~MeshRenderer();
+
+	uint8 renderLayer = 0;
 
 	void SetRectangle();
 
@@ -21,6 +24,7 @@ private:
 	bool m_primitive = false;
 	Geometry* m_pGeometry = nullptr;
 	Mesh* m_pMesh = nullptr;
+
 
 private:
 	friend class RenderSystem;

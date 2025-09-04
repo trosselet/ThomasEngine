@@ -12,6 +12,8 @@
 
 //Engine
 #include "../Engine/Header/GameManager.h"
+#include "../Engine/Header/GameObject.h"
+#include "../Engine/Header/Scene.h"
 
 //Render
 #include "../Render/Header/Window.h"

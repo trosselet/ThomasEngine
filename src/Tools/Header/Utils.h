@@ -7,6 +7,8 @@
 
 namespace Utils
 {
+#define assert( condition ) if ( condition == false ) throw
+
 #pragma region Log Debug
 	template<typename T>
 	inline void DebugLog(const T& message)
