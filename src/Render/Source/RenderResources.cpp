@@ -14,11 +14,7 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateRenderTargets(m_pDevice);
 	CreateCommandAllocator(m_pDevice);
 
-#if _DEBUG
 	CreatePipelineState(m_pDevice, L"../../res/Gameplay/shaders/shader.hlsl");
-#else
-	CreatePipelineState(m_pDevice, L"../../../../res/Gameplay/shaders/shader.hlsl");
-#endif
 	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
 }
 

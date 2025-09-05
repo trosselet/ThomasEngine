@@ -4,7 +4,7 @@
 #include "../Tools/Header/PrimitiveTypes.h"
 
 class GameObject;
-class MeshRenderer;
+struct MeshRenderer;
 class GameManager;
 
 class Scene

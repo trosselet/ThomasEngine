@@ -9,6 +9,11 @@
 #include <dxgidebug.h>
 #include <d3dcompiler.h>
 
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "D3D12.lib")
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "D3DCompiler.lib")
+
 
 #include "../Tools/Header/PrimitiveTypes.h"
 #include "../Tools/Header/Utils.h"
