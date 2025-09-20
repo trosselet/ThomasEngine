@@ -14,7 +14,6 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-
 #include "../Tools/Header/PrimitiveTypes.h"
 #include "../Tools/Header/Utils.h"
 #include "../Tools/Header/Color.h"

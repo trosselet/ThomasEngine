@@ -55,6 +55,6 @@
     },
     "solution_guid": "6D9631E6-0C74-643C-4CBA-113121A70FA7",
     "solution_name": "ThomasEngine",
-    "startup_project": "Engine",
+    "startup_project": "Gameplay",
     "version": "1.17.4"
 }
