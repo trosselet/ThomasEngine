@@ -15,7 +15,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     scene.Load();
     scene.SetActive();
 
+    GameObject* const pMainCamera = new GameObject(scene);
+    pMainCamera->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    Camera& cameraComponent = pMainCamera->AddComponent<Camera>();
+    pMainCamera->SetName("Camera");
+
     GameObject* const pRectangle = new GameObject(scene);
+    pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
     MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();
     pRectangleMeshRendererTest.SetRectangle();
     pRectangle->SetName("Rectangle");

@@ -6,6 +6,7 @@
 class GameObject;
 class MeshRenderer;
 class GameManager;
+class Camera;
 
 class Scene
 {
@@ -29,6 +30,7 @@ public:
 
 	std::vector<GameObject*>& GetGameObjects();
 	std::vector<MeshRenderer*>& GetMeshRenderers();
+	std::vector<Camera*>& GetCameras();
 
 	void HandleCreation();
 	void HandleDestruction();
@@ -44,13 +46,15 @@ private:
 	std::vector<GameObject*> m_gameObjects;
 	std::vector<uint32> m_gameObjectsIDs;
 	std::vector<MeshRenderer*> m_meshRenderers;
+	std::vector<Camera*> m_cameras;
 
 	std::vector<GameObject*> m_gameObjectsToCreate;
 	std::vector<MeshRenderer*> m_meshRenderersToCreate;
+	std::vector<Camera*> m_camerasToCreate;
 
 	std::vector<GameObject*> m_gameObjectsToDelete;
 
-
+	friend struct Camera;
 	friend struct MeshRenderer;
 	friend class GameObject;
 	friend class GameManager;

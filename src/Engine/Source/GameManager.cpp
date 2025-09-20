@@ -45,6 +45,7 @@ void GameManager::Release()
 	}
 
 	delete m_pInstance;
+	m_pInstance = nullptr;
 }
 
 std::vector<Scene>& GameManager::GetScenes()

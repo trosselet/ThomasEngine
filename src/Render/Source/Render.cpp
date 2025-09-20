@@ -4,6 +4,7 @@
 #include "Header/Window.h"
 
 #include "Header/Mesh.h"
+#include "Header/Material.h"
 #include "Header/UploadBuffer.h"
 
 Render::Render(const Window* pWindow)
@@ -11,12 +12,22 @@ Render::Render(const Window* pWindow)
 	m_pRenderResources = new RenderResources(pWindow->GetHWND(), pWindow->GetWidth(), pWindow->GetHeight());
 	m_pRenderResources->Resize(pWindow->GetWidth(), pWindow->GetHeight());
 
+	m_pCbCurrentViewProjInstance = new UploadBuffer<CameraCB>(m_pRenderResources->GetDevice(), 1, 1);
 }
 
 Render::~Render()
 {
+	if (m_pCbCurrentViewProjInstance)
+	{
+		delete m_pCbCurrentViewProjInstance;
+		m_pCbCurrentViewProjInstance = nullptr;
+	}
 
-	delete m_pRenderResources;
+	if (m_pRenderResources)
+	{
+		delete m_pRenderResources;
+		m_pRenderResources = nullptr;
+	}
 }
 
 void Render::Clear()
@@ -54,9 +65,11 @@ void Render::Clear()
 	m_pRenderResources->GetCommandList()->SetDescriptorHeaps(1, &descHeap);*/
 }
 
-void Render::Draw(Mesh* pMesh)
+void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix)
 {
 	if (pMesh == nullptr) return;
+
+	pMaterial->UpdateWorldConstantBuffer(DirectX::XMLoadFloat4x4(&objectWorldMatrix));
 
 	m_pRenderResources->GetCommandList()->SetPipelineState(m_pRenderResources->GetPSO());
 	m_pRenderResources->GetCommandList()->SetGraphicsRootSignature(m_pRenderResources->GetRootSignature());
@@ -69,7 +82,8 @@ void Render::Draw(Mesh* pMesh)
 	D3D12_INDEX_BUFFER_VIEW pIbv = pMesh->GetIndexBuffer();
 	m_pRenderResources->GetCommandList()->IASetIndexBuffer(&pIbv);
 
-	//m_pRenderResources->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
+	m_pRenderResources->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
+	m_pRenderResources->GetCommandList()->SetGraphicsRootConstantBufferView(1, pMaterial->GetUploadBuffer()->GetResource()->GetGPUVirtualAddress());
 
 	m_pRenderResources->GetCommandList()->DrawIndexedInstanced(pMesh->GetIndexCount(), 1, 0, 0, 0);
 

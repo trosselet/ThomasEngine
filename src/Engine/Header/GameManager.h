@@ -25,6 +25,8 @@ public:
 
 	static RenderSystem& GetRenderSystem();
 
+
+
 private:
 	GameManager(HINSTANCE hInstance);
 	~GameManager();

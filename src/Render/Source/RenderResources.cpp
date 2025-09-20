@@ -14,11 +14,7 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateRenderTargets(m_pDevice);
 	CreateCommandAllocator(m_pDevice);
 
-#if _DEBUG
 	CreatePipelineState(m_pDevice, L"../../res/Gameplay/shaders/shader.hlsl");
-#else
-	CreatePipelineState(m_pDevice, L"../../../../res/Gameplay/shaders/shader.hlsl");
-#endif
 	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
 }
 
@@ -335,12 +331,21 @@ ID3D12RootSignature* RenderResources::GetRootSignature()
 
 void RenderResources::CreateDXGIFactory()
 {
+#if defined(_DEBUG)
+	{
+		ID3D12Debug* debugController;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		{
+			debugController->EnableDebugLayer();
+		}
+	}
+#endif
+
 	if (SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&m_pFactory))))
 	{
 		Utils::DebugLog("DXGI Factory has been created !");
 		return;
 	}
-	Utils::DebugError("Error while creating DXGI Factory");
 }
 
 void RenderResources::CreateDXGIAdapters()
@@ -469,31 +474,53 @@ void RenderResources::CreateCommandAllocator(ID3D12Device* pDevice)
 
 void RenderResources::CreateRootSignature(ID3D12Device* pDevice)
 {
-	D3D12_ROOT_SIGNATURE_DESC desc = {};
-	desc.NumParameters = 0;
-	desc.pParameters = nullptr;
-	desc.NumStaticSamplers = 0;
-	desc.pStaticSamplers = nullptr;
-	desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	D3D12_ROOT_PARAMETER rootParameters[2] = {};
+
+	//////////////////////////////
+	// cbPass to b0 (View/Proj) //
+	//////////////////////////////
+
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[0].Descriptor.ShaderRegister = 0; // b0
+	rootParameters[0].Descriptor.RegisterSpace = 0;
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	///////////////////////////////
+	// cbPerObject to b1 (World) //
+	///////////////////////////////
+
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[1].Descriptor.ShaderRegister = 1; // b1
+	rootParameters[1].Descriptor.RegisterSpace = 0;
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+	D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
+	rootDesc.NumParameters = 2;
+	rootDesc.pParameters = rootParameters;
+	rootDesc.NumStaticSamplers = 0;
+	rootDesc.pStaticSamplers = nullptr;
+	rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	ID3DBlob* signature = nullptr;
 	ID3DBlob* error = nullptr;
 
-	if (SUCCEEDED(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error)))
+	HRESULT hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+	if (FAILED(hr))
 	{
-		if (SUCCEEDED(m_pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature))))
-		{
-			Utils::DebugLog("Root Signature has been created !");
-			return;
-		}
-		Utils::DebugError("Error while creating the Root Signature !");
+		if (error)
+			Utils::DebugError("Root Signature Serialize Error: ", (const char*)error->GetBufferPointer());
 	}
-	Utils::DebugError("Error while creating the Serialize Root Signature: ", error);
+	else
+	{
+		hr = m_pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature));
+		if (FAILED(hr))
+			Utils::DebugError("Error creating Root Signature!");
+		else
+			Utils::DebugLog("Root Signature created with CBVs !");
+	}
 
-	signature->Release();
-
-	if (error)
-		error->Release();
+	if (signature) signature->Release();
+	if (error) error->Release();
 
 }
 
@@ -541,7 +568,6 @@ void RenderResources::CreatePipelineState(ID3D12Device* pDevice, const std::wstr
 		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-
 	};
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -598,8 +624,8 @@ void RenderResources::CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllo
 {
 	if (SUCCEEDED(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pcmdAllocator, pPso, IID_PPV_ARGS(&m_pCommandList))))
 	{
-		Utils::DebugLog("CommandList successfuly created !");
 		m_pCommandList->Close();
+		Utils::DebugLog("CommandList successfuly created !");
 		return;
 	}
 }

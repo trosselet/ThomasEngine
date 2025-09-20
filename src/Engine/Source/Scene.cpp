@@ -4,6 +4,7 @@
 #include "Header/GameObject.h"
 #include "Header/GameManager.h"
 #include "Header/RenderSystem.h"
+#include "Header/Camera.h"
 
 Scene::~Scene()
 {
@@ -96,6 +97,11 @@ std::vector<MeshRenderer*>& Scene::GetMeshRenderers()
     return m_meshRenderers;
 }
 
+std::vector<Camera*>& Scene::GetCameras()
+{
+    return m_cameras;
+}
+
 void Scene::HandleCreation()
 {
     for (GameObject* const pGameObject : m_gameObjectsToCreate)
@@ -115,10 +121,27 @@ void Scene::HandleCreation()
         GameManager::GetRenderSystem().m_meshRenderers[pMeshRenderer->renderLayer].push_back(pMeshRenderer);
     }
     m_meshRenderersToCreate.clear();
+
+    for (Camera* const pCamera : m_camerasToCreate)
+    {
+
+        pCamera->m_toBeCreated = false;
+        pCamera->m_created = true;
+    }
+    m_camerasToCreate.clear();
 }
 
 void Scene::HandleDestruction()
 {
+    for (uint16 i = 0; i < m_cameras.size(); i++)
+    {
+        Camera* const pCamera = m_cameras[i];
+        if (pCamera->m_toBeDeleted == false) continue;
+
+        m_cameras.erase(m_cameras.begin() + i);
+        delete pCamera;
+    }
+
     for (uint16 i = 0; i < m_meshRenderers.size(); i++)
     {
         MeshRenderer* const pMeshRenderer = m_meshRenderers[i];

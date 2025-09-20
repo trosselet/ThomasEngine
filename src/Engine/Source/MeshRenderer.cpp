@@ -25,6 +25,7 @@ void MeshRenderer::SetRectangle()
 	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, Color::Red);
 
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
 	m_primitive = true;
 }
 
@@ -36,6 +37,12 @@ void MeshRenderer::Free()
 	{
 		delete m_pGeometry;
 		m_pGeometry = nullptr;
+	}
+
+	if (m_pMaterial)
+	{
+		delete m_pMaterial;
+		m_pMaterial = nullptr;
 	}
 
 	if (m_pMesh)

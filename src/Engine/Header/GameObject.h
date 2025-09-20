@@ -4,7 +4,10 @@
 #include "../Tools/Header/PrimitiveTypes.h"
 
 #include "Engine/Header/MeshRenderer.h"
+#include "Engine/Header/Camera.h"
 #include "Engine/Header/Scene.h"
+
+#include "Tools/Header/Transform.h"
 
 struct Component;
 
@@ -13,6 +16,8 @@ class GameObject
 public:
 	GameObject(Scene& scene);
 	~GameObject() = default;
+
+	TRANSFORM transform;
 
 	template<class ComponentClass> bool HasComponent() const;
 	template<class ComponentClass> ComponentClass const& GetComponent() const;
@@ -100,4 +105,28 @@ inline void GameObject::RemoveComponent<MeshRenderer>()
 {
 	assert(!HasComponent<MeshRenderer>());
 	m_components[MeshRenderer::Tag]->Destroy();
+}
+
+template <>
+inline Camera& GameObject::AddComponent<Camera>()
+{
+	assert((HasComponent<Camera>() == false));
+
+	Camera* const pCamera = new Camera();
+	m_pScene->m_cameras.push_back(pCamera);
+	pCamera->m_pOwner = this;
+	m_pScene->m_camerasToCreate.push_back(pCamera);
+	if (m_pScene->m_pMainCamera == nullptr) m_pScene->m_pMainCamera = pCamera->m_pOwner;
+
+	m_components[Camera::Tag] = pCamera;
+	m_componentBitmask |= 1 << (Camera::Tag - 1);
+
+	return *pCamera;
+}
+
+template <>
+inline void GameObject::RemoveComponent<Camera>()
+{
+	assert(HasComponent<Camera>());
+	m_components[Camera::Tag]->Destroy();
 }

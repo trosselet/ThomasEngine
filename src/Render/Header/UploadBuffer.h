@@ -14,6 +14,17 @@ struct CB
     DirectX::XMFLOAT4 color;
 };
 
+struct CameraCB : ConstantBuffer
+{
+    DirectX::XMFLOAT4X4 viewMatrix;
+    DirectX::XMFLOAT4X4 projectionMatrix;
+};
+
+struct ObjectData : ConstantBuffer
+{
+    DirectX::XMFLOAT4X4 world;
+};
+
 template<typename T>
 class UploadBuffer
 {

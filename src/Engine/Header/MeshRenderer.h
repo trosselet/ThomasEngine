@@ -6,6 +6,7 @@
 
 struct Geometry;
 class Mesh;
+class Material;
 
 struct MeshRenderer : ComponentBase<Component::MeshRenderer>
 {
@@ -24,6 +25,7 @@ private:
 	bool m_primitive = false;
 	Geometry* m_pGeometry = nullptr;
 	Mesh* m_pMesh = nullptr;
+	Material* m_pMaterial = nullptr;
 
 
 private:
