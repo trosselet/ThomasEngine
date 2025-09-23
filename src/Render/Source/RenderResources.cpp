@@ -341,7 +341,7 @@ void RenderResources::CreateDXGIFactory()
 	}
 #endif
 
-	if (SUCCEEDED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&m_pFactory))))
+	if (SUCCEEDED(CreateDXGIFactory2(0, IID_PPV_ARGS(&m_pFactory))))
 	{
 		Utils::DebugLog("DXGI Factory has been created !");
 		return;
