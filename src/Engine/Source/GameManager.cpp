@@ -15,8 +15,8 @@ GameManager::GameManager(HINSTANCE hInstance)
 
 GameManager::~GameManager()
 {
-	delete m_pRenderSystem;
 	delete m_pWindow;
+	delete m_pRenderSystem;
 
 }
 

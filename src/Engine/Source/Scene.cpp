@@ -133,23 +133,16 @@ void Scene::HandleCreation()
 
 void Scene::HandleDestruction()
 {
-    for (uint16 i = 0; i < m_cameras.size(); i++)
+    for (int i = static_cast<int>(m_cameras.size()) - 1; i >= 0; i--)
     {
         Camera* const pCamera = m_cameras[i];
-        if (pCamera->m_toBeDeleted == false) continue;
+        if (!pCamera->m_toBeDeleted) 
+            continue;
 
-        m_cameras.erase(m_cameras.begin() + i);
         delete pCamera;
+        m_cameras.erase(m_cameras.begin() + i);
     }
 
-    for (uint16 i = 0; i < m_meshRenderers.size(); i++)
-    {
-        MeshRenderer* const pMeshRenderer = m_meshRenderers[i];
-        if (pMeshRenderer->m_toBeDeleted == false) continue;
-
-        m_meshRenderers.erase(m_meshRenderers.begin() + i);
-        delete pMeshRenderer;
-    }
 
     for (GameObject* const pGameObject : m_gameObjectsToDelete)
     {
@@ -158,5 +151,16 @@ void Scene::HandleDestruction()
         delete pGameObject;
     }
     m_gameObjectsToDelete.clear();
+
+
+    for (int i = static_cast<int>(m_meshRenderers.size()) - 1; i >= 0; i--)
+    {
+        MeshRenderer* const pMeshRenderer = m_meshRenderers[i];
+        if (!pMeshRenderer->m_toBeDeleted)
+            continue;
+
+        delete pMeshRenderer;
+        m_meshRenderers.erase(m_meshRenderers.begin() + i);
+    }
 
 }

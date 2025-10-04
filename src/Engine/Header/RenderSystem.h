@@ -15,8 +15,6 @@ public:
 	~RenderSystem() = default;
 	void Rendering();
 
-	void CreateMesh();
-
 private:
 	std::array<std::vector<MeshRenderer const*>, 16> m_meshRenderers{};
 	GraphicEngine* m_pGraphic;

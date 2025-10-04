@@ -26,6 +26,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     pRectangleMeshRendererTest.SetRectangle();
     pRectangle->SetName("Rectangle");
 
+    GameObject* const pRectangle1 = new GameObject(scene);
+    pRectangle1->transform.SetPosition({ 1.5f, 0.0f, 5.0f });
+    MeshRenderer& pRectangle1MeshRendererTest = pRectangle1->AddComponent<MeshRenderer>();
+    pRectangle1MeshRendererTest.SetRectangle();
+    pRectangle1->SetName("Rectangle2");
+
     GameManager::Run();
     GameManager::Release();
 

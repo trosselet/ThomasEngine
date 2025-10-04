@@ -7,11 +7,11 @@
 Material::Material(Render* pRender) :
 	m_uploadBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1)
 {
-
 }
 
 Material::~Material()
 {
+	
 }
 
 UploadBuffer<ObjectData>* Material::GetUploadBuffer()

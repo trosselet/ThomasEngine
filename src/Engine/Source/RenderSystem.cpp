@@ -46,11 +46,3 @@ void RenderSystem::Rendering()
 	}
 	m_pGraphic->Display();
 }
-
-void RenderSystem::CreateMesh()
-{
-	MeshRenderer* mesh = new MeshRenderer();
-	mesh->SetRectangle();
-
-	m_meshRenderers[0].push_back(mesh);
-}

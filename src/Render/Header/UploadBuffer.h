@@ -83,7 +83,6 @@ public:
     inline ID3D12Resource* GetResource() const { return m_pUploadBuffer; }
     inline UINT GetElementByteSize() const { return m_elementByteSize; }
 
-
 private:
     ID3D12Resource* m_pUploadBuffer;
     BYTE* m_pMappedData;

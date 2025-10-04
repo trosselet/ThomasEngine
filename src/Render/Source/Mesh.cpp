@@ -14,6 +14,18 @@ Mesh::Mesh(Geometry* pGeometry, Render* pRender)
 
 Mesh::~Mesh()
 {
+    if (m_pVertexBufferGPU)
+    {
+        m_pVertexBufferGPU->Release();
+        m_pVertexBufferGPU = nullptr;
+    }
+    
+    if (m_pIndexBufferGPU)
+    {
+        m_pIndexBufferGPU->Release();
+        m_pIndexBufferGPU = nullptr;
+    }
+
 	ReleaseUploadBuffers();
 }
 
@@ -143,12 +155,12 @@ void Mesh::UploadBuffers(float32* vertices, UINT vertexCount, uint32* indices, U
         }
         else
         {
-            Utils::DebugError("Impossible de mapper l'uploader d'IB");
+            Utils::DebugError("uploader of IB is not mappable");
         }
     }
     else
     {
-        Utils::DebugError("m_pIndexBufferUploader == null juste après CreateDefaultBuffer()");
+        Utils::DebugError("m_pIndexBufferUploader == null after CreateDefaultBuffer()");
     }
 
     m_vertexBuffer.BufferLocation = m_pVertexBufferGPU->GetGPUVirtualAddress();
