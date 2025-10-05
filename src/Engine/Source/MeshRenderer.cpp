@@ -6,8 +6,10 @@
 #include "Render/Header/Geometry.h"
 #include "Render/Header/PrimitiveGeometry.h"
 #include "Render/Header/Mesh.h"
+#include "Render/Header/Material.h"
 #include "Render/Header/GraphicEngine.h"
 #include "Render/Header/Window.h"
+
 
 #include "../Tools/Header/Color.h"
 
@@ -50,5 +52,6 @@ void MeshRenderer::Free()
 		delete m_pMesh;
 		m_pMesh = nullptr;
 	}
+
 	m_primitive = false;
 }

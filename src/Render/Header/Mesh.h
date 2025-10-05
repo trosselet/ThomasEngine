@@ -28,13 +28,12 @@ private:
     Render* m_pRender = nullptr;
     Geometry* m_pGeometry = nullptr;
 
-    UINT m_vertexCount;
-    UINT m_indexCount;
-
-    ID3D12Resource* m_pVertexBufferUploader;
-    ID3D12Resource* m_pIndexBufferUploader;
-    ID3D12Resource* m_pVertexBufferGPU;
-    ID3D12Resource* m_pIndexBufferGPU;
+    ID3D12Resource* m_pVertexBufferUploader = nullptr;
+    ID3D12Resource* m_pIndexBufferUploader = nullptr;
+    ID3D12Resource* m_pVertexBufferGPU = nullptr;
+    ID3D12Resource* m_pIndexBufferGPU = nullptr;
+    UINT m_vertexCount = 0;
+    UINT m_indexCount = 0;
 
     D3D12_VERTEX_BUFFER_VIEW m_vertexBuffer = {};
     D3D12_INDEX_BUFFER_VIEW m_indexBuffer = {};

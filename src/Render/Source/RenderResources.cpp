@@ -44,6 +44,7 @@ RenderResources::~RenderResources()
 	}
 
 	if (m_pDevice) { m_pDevice->Release(); m_pDevice = nullptr; }
+	Utils::DebugWarning("Device destroyed");
 	if (m_pAdapter) { m_pAdapter->Release(); m_pAdapter = nullptr; }
 	if (m_pFactory) { m_pFactory->Release(); m_pFactory = nullptr; }
 
@@ -146,6 +147,7 @@ ID3D12Resource* RenderResources::CreateDefaultBuffer(
 	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	bufferDesc.Width = byteSize;
 	bufferDesc.Height = 1;
+	bufferDesc.Alignment = 0;
 	bufferDesc.DepthOrArraySize = 1;
 	bufferDesc.MipLevels = 1;
 	bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -200,7 +202,10 @@ ID3D12Resource* RenderResources::CreateDefaultBuffer(
 	void* mappedData = nullptr;
 	D3D12_RANGE readRange = {};
 	hr = (*uploadBuffer)->Map(0, &readRange, &mappedData);
-	memcpy(mappedData, initData, byteSize);
+	if (initData != nullptr)
+	{
+		memcpy(mappedData, initData, byteSize);
+	}
 	(*uploadBuffer)->Unmap(0, nullptr);
 
 	/*==============================*/
@@ -217,6 +222,14 @@ ID3D12Resource* RenderResources::CreateDefaultBuffer(
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = finalState;
 	cmdList->ResourceBarrier(1, &barrier);
+
+	if (FAILED(hr))
+	{
+		(*uploadBuffer)->Release();
+		defaultBuffer->Release();
+		return nullptr;
+	}
+
 
 	return defaultBuffer;
 }

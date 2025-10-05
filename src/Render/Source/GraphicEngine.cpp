@@ -66,8 +66,7 @@ Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)
 
 Material* GraphicEngine::CreateMaterial()
 {
-	Material* pMat = new Material(m_pRender);
-	return pMat;
+	return new Material(m_pRender);
 }
 
 void GraphicEngine::UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix)

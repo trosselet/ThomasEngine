@@ -9,6 +9,7 @@ Mesh::Mesh(Geometry* pGeometry, Render* pRender)
 {
 	m_pGeometry = pGeometry;
 	m_pRender = pRender;
+
 	UploadGeometry();
 }
 
@@ -170,5 +171,10 @@ void Mesh::UploadBuffers(float32* vertices, UINT vertexCount, uint32* indices, U
     m_indexBuffer.BufferLocation = m_pIndexBufferGPU->GetGPUVirtualAddress();
     m_indexBuffer.Format = DXGI_FORMAT_R32_UINT;
     m_indexBuffer.SizeInBytes = indexBufferSize;
+
+    m_pVertexBufferUploader->SetName(L"VBufferUploader");
+    m_pVertexBufferGPU->SetName(L"VBufferGPU");
+    m_pIndexBufferUploader->SetName(L"IBufferUploader");
+    m_pIndexBufferGPU->SetName(L"IBufferGPU");
 
 }

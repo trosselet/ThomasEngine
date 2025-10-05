@@ -7,11 +7,17 @@
 Material::Material(Render* pRender) :
 	m_uploadBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1)
 {
+	m_uploadBuffer.GetResource()->SetName(L"MaterialUBuffer");
 }
 
 Material::~Material()
 {
-	
+	Release();
+}
+
+void Material::Release()
+{
+	Utils::DebugWarning("Material destroyed");
 }
 
 UploadBuffer<ObjectData>* Material::GetUploadBuffer()

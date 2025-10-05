@@ -15,9 +15,21 @@ GameManager::GameManager(HINSTANCE hInstance)
 
 GameManager::~GameManager()
 {
-	delete m_pWindow;
-	delete m_pRenderSystem;
+	for (Scene& scene : m_scenes)
+	{
+		scene.Unload();
+		scene.HandleDestruction(); 
+	}
 
+	m_scenes.clear();
+	m_loadedScenes.clear();
+	m_scenesToLoad.clear();
+
+	delete m_pRenderSystem;
+	m_pRenderSystem = nullptr;
+
+	delete m_pWindow;
+	m_pWindow = nullptr;
 }
 
 void GameManager::Initialize(HINSTANCE hInstance)
