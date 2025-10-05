@@ -2,14 +2,15 @@
 #include "Header/GameManager.h"
 #include "Header/RenderSystem.h"
 #include "Header/Scene.h"
+#include "Header/ScriptSystem.h"
 
 #include "Render/Header/Window.h"
 
-GameManager::GameManager(HINSTANCE hInstance)
+GameManager::GameManager(HINSTANCE hInstance) :
+	m_pWindow(new Window(hInstance)),
+	m_pRenderSystem(new RenderSystem(m_pWindow->GetGraphicEngine())),
+	m_pScriptSystem(new ScriptSystem())
 {
-	m_pWindow = new Window(hInstance, 1200, 800, L"EngineWindow");
-	if (m_pWindow != nullptr) m_pRenderSystem = new RenderSystem(m_pWindow->GetGraphicEngine());
-
 	
 }
 
@@ -24,6 +25,9 @@ GameManager::~GameManager()
 	m_scenes.clear();
 	m_loadedScenes.clear();
 	m_scenesToLoad.clear();
+
+	delete m_pScriptSystem;
+	m_pScriptSystem = nullptr;
 
 	delete m_pRenderSystem;
 	m_pRenderSystem = nullptr;
@@ -80,6 +84,11 @@ RenderSystem& GameManager::GetRenderSystem()
 	return *m_pInstance->m_pRenderSystem;
 }
 
+ScriptSystem& GameManager::GetScriptSystem()
+{
+	return *m_pInstance->m_pScriptSystem;
+}
+
 void GameManager::GameLoop()
 {
 
@@ -91,6 +100,8 @@ void GameManager::GameLoop()
 		HandleDeletions();
 
 		FixedUpdate();
+
+		m_pScriptSystem->OnUpdate();
 
 		m_pRenderSystem->Rendering();
 
@@ -104,6 +115,7 @@ void GameManager::Update()
 
 void GameManager::FixedUpdate()
 {
+	m_pScriptSystem->OnFixedUpdate();
 }
 
 void GameManager::HandleCreations()

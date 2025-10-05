@@ -9,7 +9,11 @@
 
 #include "Tools/Header/Transform.h"
 
+#include "Engine/Header/IScript.h"
+#include "Engine/Header/ScriptSystem.h"
+
 struct Component;
+
 
 class GameObject
 {
@@ -24,6 +28,9 @@ public:
 	template<class ComponentClass> ComponentClass& GetComponent();
 	template<class ComponentClass> ComponentClass& AddComponent();
 	template<class ComponentClass> void RemoveComponent();
+
+	template<typename T, typename ... Args> T* AddScript(Args&&... args);
+	template<typename T> T* GetScript();
 
 	bool IsActive();
 	void SetActive(bool active);
@@ -57,6 +64,7 @@ private:
 	GameObject* m_pParent = nullptr;
 	std::vector<GameObject*> m_pChildren;
 	std::unordered_map<uint16, Component*> m_components;
+	std::vector<IScript*> m_scripts;
 
 	uint64 m_componentBitmask = 0;
 
@@ -64,7 +72,33 @@ private:
 	friend class Scene;
 };
 
-#endif // !GAMEOBJECT_INCLUDE__H
+template<typename T, typename ...Args>
+inline T* GameObject::AddScript(Args && ...args)
+{
+	static_assert(std::is_base_of<IScript, T>::value, "T must be derived from IScript");
+	T* script = new T(std::forward<Args>(args)...);
+	script->SetOwner(this);
+	script->OnStart();
+	m_scripts.push_back(script);
+	GameManager::GetScriptSystem().m_scriptsByEntity[GetId()].push_back(script);
+	return script;
+}
+
+template<typename T>
+inline T* GameObject::GetScript()
+{
+	for (int i = 0; i < m_scripts.size(); i++)
+	{
+		if (T* foundScript = dynamic_cast<T*>(m_scripts[i]))
+		{
+			return foundScript;
+		}
+	}
+	return nullptr;
+}
+
+
+
 
 template<class ComponentClass>
 inline bool GameObject::HasComponent() const
@@ -130,3 +164,6 @@ inline void GameObject::RemoveComponent<Camera>()
 	assert(HasComponent<Camera>());
 	m_components[Camera::Tag]->Destroy();
 }
+
+#endif // !GAMEOBJECT_INCLUDE__H
+

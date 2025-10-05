@@ -3,6 +3,8 @@
 #include "pch.h"
 #include "Header/main.h"
 
+#include "Header/CameraMovement.h"
+
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow)
 {
@@ -19,6 +21,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     pMainCamera->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     Camera& cameraComponent = pMainCamera->AddComponent<Camera>();
     pMainCamera->SetName("Camera");
+    pMainCamera->AddScript<CameraMovement>();
 
     GameObject* const pRectangle = new GameObject(scene);
     pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });

@@ -7,6 +7,7 @@
 class Window;
 class RenderSystem;
 class Scene;
+class ScriptSystem;
 
 class GameManager
 {
@@ -24,6 +25,7 @@ public:
 	static float32& GetFixedDeltaTime();
 
 	static RenderSystem& GetRenderSystem();
+	static ScriptSystem& GetScriptSystem();
 
 
 
@@ -45,6 +47,8 @@ private:
 
 	Window* m_pWindow = nullptr;
 	RenderSystem* m_pRenderSystem = nullptr;
+	ScriptSystem* m_pScriptSystem = nullptr;
+
 	std::vector<Scene>  m_scenes;
 	std::vector<Scene*> m_loadedScenes;
 	Scene* m_pActiveScene = nullptr;
