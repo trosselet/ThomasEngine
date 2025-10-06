@@ -27,13 +27,25 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
     MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();
     pRectangleMeshRendererTest.SetRectangle();
-    pRectangle->SetName("Rectangle");
+    pRectangle->SetName("Rectangle1");
 
-    GameObject* const pRectangle1 = new GameObject(scene);
-    pRectangle1->transform.SetPosition({ 1.5f, 0.0f, 5.0f });
-    MeshRenderer& pRectangle1MeshRendererTest = pRectangle1->AddComponent<MeshRenderer>();
-    pRectangle1MeshRendererTest.SetRectangle();
-    pRectangle1->SetName("Rectangle2");
+    GameObject* const pSphere1 = new GameObject(scene);
+    pSphere1->transform.SetPosition({ 1.5f, 0.0f, 5.0f });
+    MeshRenderer& pSphere1MeshRendererTest = pSphere1->AddComponent<MeshRenderer>();
+    pSphere1MeshRendererTest.SetSphere();
+    pSphere1->SetName("Sphere1");
+   
+    GameObject* const pCircle1 = new GameObject(scene);
+    pCircle1->transform.SetPosition({ 3.0f, 0.0f, 5.0f });
+    MeshRenderer& pCircle1MeshRendererTest = pCircle1->AddComponent<MeshRenderer>();
+    pCircle1MeshRendererTest.SetCircle();
+    pCircle1->SetName("Circle1");
+   
+    GameObject* const pCube1 = new GameObject(scene);
+    pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
+    MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
+    pCube1MeshRendererTest.SetCube();
+    pCube1->SetName("Cube");
 
     GameManager::Run();
     GameManager::Release();

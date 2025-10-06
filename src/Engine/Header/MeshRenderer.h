@@ -16,6 +16,9 @@ public:
 	uint8 renderLayer = 0;
 
 	void SetRectangle();
+	void SetCircle();
+	void SetCube();
+	void SetSphere();
 
 private:
 	void Free();

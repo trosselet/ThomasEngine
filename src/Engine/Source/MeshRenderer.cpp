@@ -31,6 +31,45 @@ void MeshRenderer::SetRectangle()
 	m_primitive = true;
 }
 
+void MeshRenderer::SetCircle()
+{
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(CIRCLE, Color::Red);
+
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_primitive = true;
+}
+
+void MeshRenderer::SetCube()
+{
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(CUBE, Color::Red);
+
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_primitive = true;
+}
+
+void MeshRenderer::SetSphere()
+{
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(SPHERE, Color::Red);
+
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_primitive = true;
+}
+
 void MeshRenderer::Free()
 {
 	if (m_primitive == false) return;
