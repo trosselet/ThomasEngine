@@ -18,7 +18,7 @@ public:
 	HWND GetHWND() const;
 	GraphicEngine* GetGraphicEngine() const;
 
-	void OnSize(HWND hwnd, UINT wParam, uint32 width, uint32 height);
+	void OnSize(uint32 width, uint32 height);
 
 	void Update();
 	void Close();

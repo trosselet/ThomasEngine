@@ -114,3 +114,11 @@ void GraphicEngine::UpdateCameraTo(Vector3 const& position, Vector3 const& targe
 
 	m_pRender->m_pCbCurrentViewProjInstance->CopyData(0, camera);
 }
+
+Render* GraphicEngine::GetRender()
+{
+	if (!m_pRender)
+		return nullptr;
+
+	return m_pRender;
+}

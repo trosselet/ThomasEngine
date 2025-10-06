@@ -2,6 +2,8 @@
 #include "Header/Window.h"
 
 #include "Header/GraphicEngine.h"
+#include "Header/Render.h"
+#include "Header/RenderResources.h"
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -21,8 +23,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		uint32 width = LOWORD(lParam);
 		uint32 height = HIWORD(lParam);
+
+		if (width < 8)
+		{
+			width = 8;
+		}
+		if (height < 8)
+		{
+			height = 8;
+		}
+
+		if (!pointer->IsOpen())
+			break;
 		
-		pointer->OnSize(hwnd, (UINT)wParam, width, height);
+		pointer->OnSize(width, height);
 		break;
 	}
 	case WM_CLOSE:
@@ -164,6 +178,7 @@ GraphicEngine* Window::GetGraphicEngine() const
 
 #pragma endregion
 
-void Window::OnSize(HWND hwnd, UINT wParam, uint32 width, uint32 height)
+void Window::OnSize(uint32 width, uint32 height)
 {
+	m_pGraphic->GetRender()->GetRenderResources()->Resize(width, height);
 }
