@@ -23,6 +23,9 @@ Texture::Texture(int8 const* path, GraphicEngine* pGraphic) : m_pTexture(nullptr
 
     if (SUCCEEDED(hr))
     {
+        m_pTexture->SetName(L"Texture Resource");
+        m_pTextureUploadHeap->SetName(L"Texture Resource Upload Heap");
+
         UINT descriptorIndex = pGraphic->GetRender()->GetRenderResources()->AllocateSRVHeapIndex();
 
         UINT size = pGraphic->GetRender()->GetRenderResources()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

@@ -33,7 +33,10 @@ RenderResources::~RenderResources()
 	{
 		if (m_pRenderTargets[n]) { m_pRenderTargets[n]->Release(); m_pRenderTargets[n] = nullptr; }
 	}
-
+	
+		
+	if (m_pDepthStencil) { m_pDepthStencil->Release(); m_pDepthStencil = nullptr; }
+	if (m_pDsvDescriptorHeap) { m_pDsvDescriptorHeap->Release(); m_pDsvDescriptorHeap = nullptr; }
 	if (m_pCbvSrvUavDescriptorHeap) { m_pCbvSrvUavDescriptorHeap->Release(); m_pCbvSrvUavDescriptorHeap = nullptr; }
 	if (m_pRtvHeap) { m_pRtvHeap->Release(); m_pRtvHeap = nullptr; }
 	if (m_pSwapChain) { m_pSwapChain->Release(); m_pSwapChain = nullptr; }

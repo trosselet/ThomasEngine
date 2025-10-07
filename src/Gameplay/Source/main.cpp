@@ -54,7 +54,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     pSkyMeshRendererTest.SetSphere("sky.dds");
     pSky->SetName("Sky");
 
-    pCube1->SetColor(Color::Transparent);
+    //pCube1->SetColor(Color::Transparent);
 
     GameManager::Run();
     GameManager::Release();
