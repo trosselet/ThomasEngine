@@ -49,7 +49,6 @@ public:
 	std::vector<GameObject*>& GetChildren();
 
 	void SetName(int8 const* name);
-	void SetColor(Color color);
 
 private:
 	bool m_created = false;

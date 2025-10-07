@@ -6,7 +6,7 @@
 #include "Header/Render.h"
 #include "Header/RenderResources.h"
 
-Texture::Texture(int8 const* path, GraphicEngine* pGraphic) : m_pTexture(nullptr), m_pTextureUploadHeap(nullptr)
+Texture::Texture(int8 const* path, GraphicEngine* pGraphic) : m_pTexture(nullptr), m_pTextureUploadHeap(nullptr), m_path(path)
 {
     std::string filePath = "../../res/Gameplay/textures/" + std::string(reinterpret_cast<const char*>(path));
     std::wstring wPath(filePath.begin(), filePath.end());
@@ -75,4 +75,9 @@ Texture::~Texture()
 D3D12_GPU_DESCRIPTOR_HANDLE Texture::GetTextureAddress()
 {
     return m_textureAddress;
+}
+
+const char* Texture::GetTexturePath()
+{
+    return m_path;
 }

@@ -14,6 +14,8 @@ public:
 
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureAddress();
 
+    const char* GetTexturePath();
+
 private:
     ID3D12Resource* m_pTexture;
     ID3D12Resource* m_pTextureUploadHeap;
@@ -23,6 +25,8 @@ private:
 
     int m_width = 0;
     int m_height = 0;
+
+    const char* m_path = "";
 
 };
 
