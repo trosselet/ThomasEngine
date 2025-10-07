@@ -53,16 +53,15 @@ void Render::Clear()
 	const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRenderResources->GetCurrentRTV();
-	//D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_pRenderResources->GetCurrentDSV();
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_pRenderResources->GetCurrentDSV();
 
-	m_pRenderResources->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, false, nullptr/*&dsvHandle*/);
+	m_pRenderResources->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 
-	/*PRINT_CONSOLE_OUTPUT("[RENDER]: Clear render target !!!!!!!\n")*/
 	m_pRenderResources->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	//m_pRenderResources->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 1, &rect);
+	m_pRenderResources->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 1, &rect);
 
-	/*ID3D12DescriptorHeap* descHeap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
-	m_pRenderResources->GetCommandList()->SetDescriptorHeaps(1, &descHeap);*/
+	ID3D12DescriptorHeap* descHeap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
+	m_pRenderResources->GetCommandList()->SetDescriptorHeaps(1, &descHeap);
 }
 
 void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix)
@@ -81,6 +80,9 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
 
 	D3D12_INDEX_BUFFER_VIEW pIbv = pMesh->GetIndexBuffer();
 	m_pRenderResources->GetCommandList()->IASetIndexBuffer(&pIbv);
+
+	// Pos in the root parameter list of t0
+	pMaterial->UpdateTexture(2);
 
 	m_pRenderResources->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
 	m_pRenderResources->GetCommandList()->SetGraphicsRootConstantBufferView(1, pMaterial->GetUploadBuffer()->GetResource()->GetGPUVirtualAddress());

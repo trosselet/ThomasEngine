@@ -4,6 +4,7 @@
 #include "../Render/Header/UploadBuffer.h"
 
 class Render;
+class Texture;
 
 class Material
 {
@@ -16,8 +17,15 @@ public:
 	UploadBuffer<ObjectData>* GetUploadBuffer();
 	void UpdateWorldConstantBuffer(DirectX::XMMATRIX const& matrix);
 
+	void SetTexture(Texture* pTexture);
+	bool UpdateTexture(int16 position);
+	Texture* GetTexture();
+
 private:
 	UploadBuffer<ObjectData> m_uploadBuffer;
+
+	Texture* m_pTexture;
+	Render* m_pRender;
 };
 
 #endif // !MATERIAL_INCLUDE__H

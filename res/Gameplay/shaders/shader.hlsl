@@ -1,3 +1,7 @@
+Texture2D gTexture : register(t0);
+SamplerState gSampler : register(s0);
+
+
 cbuffer cbPass : register(b0)
 {
     float4x4 gView;
@@ -21,6 +25,7 @@ struct VSOutput
 {
     float4 pos : SV_POSITION;
     float4 color : COLOR;
+    float2 texcoord : TEXCOORD;
 };
 
 VSOutput vsmain(VSInput vin)
@@ -28,6 +33,7 @@ VSOutput vsmain(VSInput vin)
     VSOutput vout;
     vout.pos = mul(mul(mul(float4(vin.pos, 1.0f), gWorld), gView), gProj);
     vout.color = vin.color;
+    vout.texcoord = vin.uv;
     
     return vout;
 }
@@ -35,5 +41,5 @@ VSOutput vsmain(VSInput vin)
 
 float4 psmain(VSOutput input) : SV_TARGET
 {
-    return input.color;
+    return gTexture.Sample(gSampler, input.texcoord) * input.color;
 }

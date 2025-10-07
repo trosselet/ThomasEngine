@@ -10,8 +10,10 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateDescriptorHeap(m_pDevice);
 	CreateSwapChain(m_pFactory, m_pCommandQueue, hwnd, width, height);
 	CreateFence(m_pDevice);
+	CreateCbvSrvUavDescriptorHeap();
 	m_rtvDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	CreateRenderTargets(m_pDevice);
+	CreateDepthStencilResources(width, height);
 	CreateCommandAllocator(m_pDevice);
 
 	CreatePipelineState(m_pDevice, L"../../res/Gameplay/shaders/shader.hlsl");
@@ -32,6 +34,7 @@ RenderResources::~RenderResources()
 		if (m_pRenderTargets[n]) { m_pRenderTargets[n]->Release(); m_pRenderTargets[n] = nullptr; }
 	}
 
+	if (m_pCbvSrvUavDescriptorHeap) { m_pCbvSrvUavDescriptorHeap->Release(); m_pCbvSrvUavDescriptorHeap = nullptr; }
 	if (m_pRtvHeap) { m_pRtvHeap->Release(); m_pRtvHeap = nullptr; }
 	if (m_pSwapChain) { m_pSwapChain->Release(); m_pSwapChain = nullptr; }
 	if (m_pCommandQueue) { m_pCommandQueue->Release(); m_pCommandQueue = nullptr; }
@@ -114,12 +117,12 @@ void RenderResources::Resize(UINT width, UINT height)
 		m_frameIndex = 0;
 	}
 
-	/*if (m_pDepthStencil)
+	if (m_pDepthStencil)
 	{
-		m_pDepthStencil.Reset();
-	}*/
+		m_pDepthStencil->Release();
+	}
 
-	//CreateDepthStencilResources(width, height);
+	CreateDepthStencilResources(width, height);
 
 	CreateRenderTargets(m_pDevice);
 
@@ -327,6 +330,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetCurrentRTV()
 	return cpuDescHandle;
 }
 
+D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetCurrentDSV()
+{
+	return m_pDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
 ID3D12DescriptorHeap* RenderResources::GetCbvSrvUavDescriptorHeap()
 {
 	return m_pCbvSrvUavDescriptorHeap;
@@ -487,7 +495,7 @@ void RenderResources::CreateCommandAllocator(ID3D12Device* pDevice)
 
 void RenderResources::CreateRootSignature(ID3D12Device* pDevice)
 {
-	D3D12_ROOT_PARAMETER rootParameters[2] = {};
+	D3D12_ROOT_PARAMETER rootParameters[3] = {};
 
 	//////////////////////////////
 	// cbPass to b0 (View/Proj) //
@@ -507,11 +515,41 @@ void RenderResources::CreateRootSignature(ID3D12Device* pDevice)
 	rootParameters[1].Descriptor.RegisterSpace = 0;
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
+	///////////////////////////////
+	//		 Texture to t0       //
+	///////////////////////////////
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
+	D3D12_DESCRIPTOR_RANGE srvRange = {};
+	srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	srvRange.NumDescriptors = 1;
+	srvRange.BaseShaderRegister = 0; // t0
+	srvRange.RegisterSpace = 0;
+	srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	rootParameters[2].DescriptorTable.pDescriptorRanges = &srvRange;
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D12_FILTER_ANISOTROPIC;
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 16;
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+	samplerDesc.MinLOD = 0.0f;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc.ShaderRegister = 0;  // s0
+	samplerDesc.RegisterSpace = 0;
+	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 	D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
-	rootDesc.NumParameters = 2;
+	rootDesc.NumParameters = 3;
 	rootDesc.pParameters = rootParameters;
-	rootDesc.NumStaticSamplers = 0;
-	rootDesc.pStaticSamplers = nullptr;
+	rootDesc.NumStaticSamplers = 1;
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerDesc };
+	rootDesc.pStaticSamplers = samplers;
 	rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	ID3DBlob* signature = nullptr;
@@ -590,11 +628,11 @@ void RenderResources::CreatePipelineState(ID3D12Device* pDevice, const std::wstr
 	psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
 
 
-	/*D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
 	depthStencilDesc.DepthEnable = TRUE;
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-	depthStencilDesc.StencilEnable = FALSE;*/
+	depthStencilDesc.StencilEnable = FALSE;
 
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
@@ -617,8 +655,8 @@ void RenderResources::CreatePipelineState(ID3D12Device* pDevice, const std::wstr
 	psoDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 	psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	/*psoDesc.DepthStencilState = depthStencilDesc;
-	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;*/
+	psoDesc.DepthStencilState = depthStencilDesc;
+	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -671,4 +709,52 @@ void RenderResources::UpdateViewport(uint32 width, uint32 height)
 {
 	m_screenViewport = { 0.0f, 0.0f, static_cast<float32>(width), static_cast<float32>(height), 0.0f, 1.0f };
 	m_scissorRect = { 0, 0, static_cast<uint16>(width), static_cast<uint16>(height) };
+}
+
+void RenderResources::CreateDepthStencilResources(UINT width, UINT height)
+{
+	D3D12_RESOURCE_DESC depthStencilDesc = {};
+	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Alignment = 0;
+	depthStencilDesc.Width = width;
+	depthStencilDesc.Height = height;
+	depthStencilDesc.DepthOrArraySize = 1;
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.SampleDesc.Count = 1;
+	depthStencilDesc.SampleDesc.Quality = 0;
+	depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+	D3D12_CLEAR_VALUE clearValue = {};
+	clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	clearValue.DepthStencil.Depth = 1.0f;
+	clearValue.DepthStencil.Stencil = 0;
+
+	D3D12_HEAP_PROPERTIES heapProps = {};
+	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProps.CreationNodeMask = 1;
+	heapProps.VisibleNodeMask = 1;
+
+	if (m_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue, IID_PPV_ARGS(&m_pDepthStencil)) != S_OK)
+	{
+		Utils::DebugLog("[RENDER]: Failed to create DepthStencil buffer.\n");
+	}
+
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	if (!m_pDsvDescriptorHeap)
+	{
+		if (m_pDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_pDsvDescriptorHeap)) != S_OK)
+		{
+			Utils::DebugLog("[RENDER]: Failed to create DSV Heap.\n");
+		}
+	}
+
+	m_pDevice->CreateDepthStencilView(m_pDepthStencil, nullptr, m_pDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 }

@@ -24,10 +24,29 @@ void MeshRenderer::SetRectangle()
 
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, Color::Red);
+	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, Color::White);
 
+
+	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
 	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
+	m_primitive = true;
+}
+
+void MeshRenderer::SetRectangle(const char* texturePath)
+{
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, Color::White);
+
+
+	m_pTexture = graphics.CreateTexture(texturePath);
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
 	m_primitive = true;
 }
 
@@ -37,10 +56,27 @@ void MeshRenderer::SetCircle()
 
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreatePrimitiveGeometry(CIRCLE, Color::Red);
+	m_pGeometry = graphics.CreatePrimitiveGeometry(CIRCLE, Color::White);
 
+	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
 	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
+	m_primitive = true;
+}
+
+void MeshRenderer::SetCircle(const char* texturePath)
+{
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(CIRCLE, Color::White);
+
+	m_pTexture = graphics.CreateTexture(texturePath);
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
 	m_primitive = true;
 }
 
@@ -50,10 +86,27 @@ void MeshRenderer::SetCube()
 
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreatePrimitiveGeometry(CUBE, Color::Red);
+	m_pGeometry = graphics.CreatePrimitiveGeometry(CUBE, Color::White);
 
+	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
 	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
+	m_primitive = true;
+}
+
+void MeshRenderer::SetCube(const char* texturePath)
+{
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(CUBE, Color::White);
+
+	m_pTexture = graphics.CreateTexture(texturePath);
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
 	m_primitive = true;
 }
 
@@ -63,10 +116,27 @@ void MeshRenderer::SetSphere()
 
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreatePrimitiveGeometry(SPHERE, Color::Red);
+	m_pGeometry = graphics.CreatePrimitiveGeometry(SPHERE, Color::White);
 
+	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
 	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
+	m_primitive = true;
+}
+
+void MeshRenderer::SetSphere(const char* texturePath)
+{
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(SPHERE, Color::White);
+
+	m_pTexture = graphics.CreateTexture(texturePath);
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
 	m_primitive = true;
 }
 

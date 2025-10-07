@@ -33,6 +33,7 @@ public:
 	D3D12_VIEWPORT GetViewport();
 	ID3D12Resource* GetCurrentRenderTarget();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTV();
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentDSV();
 	ID3D12DescriptorHeap* GetCbvSrvUavDescriptorHeap();
 
 	ID3D12PipelineState* GetPSO();
@@ -57,6 +58,8 @@ public:
 
 	void Present(bool vsync);
 
+	UINT AllocateSRVHeapIndex() { return m_srvHeapIndex++; }
+
 private:
 	void CreateDXGIFactory();
 	void CreateDXGIAdapters();
@@ -74,6 +77,7 @@ private:
 	void CreateCbvSrvUavDescriptorHeap();
 	void CreateFence(ID3D12Device* pDevice);
 	void UpdateViewport(uint32 width, uint32 height);
+	void CreateDepthStencilResources(UINT width, UINT height);
 
 private:
 	IDXGIFactory2* m_pFactory = nullptr;
@@ -93,9 +97,13 @@ private:
 	ID3D12DescriptorHeap* m_pCbvSrvUavDescriptorHeap;
 	ID3D12PipelineState* m_pPipelineState;
 	ID3D12GraphicsCommandList* m_pCommandList;
+	ID3D12DescriptorHeap* m_pDsvDescriptorHeap;
+	ID3D12Resource* m_pDepthStencil;
 	UINT m_rtvDescriptorSize;
 
 private:
+	uint32 m_srvHeapIndex = 0;
+
 	UINT m_frameIndex;
 	HANDLE m_fenceEvent;
 	ID3D12Fence* m_pFence;

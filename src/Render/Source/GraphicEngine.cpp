@@ -10,6 +10,7 @@
 #include "Header/RenderResources.h"
 #include "Header/Mesh.h"
 #include "Header/Material.h"
+#include "Header/Texture.h"
 
 #include "Header/UploadBuffer.h"
 
@@ -67,6 +68,16 @@ Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)
 Material* GraphicEngine::CreateMaterial()
 {
 	return new Material(m_pRender);
+}
+
+Texture* GraphicEngine::CreateTexture(char const* filePath)
+{
+	m_pRender->GetRenderResources()->ResetCommandList();
+	Texture* pTexture = new Texture(filePath, this);
+	m_pRender->GetRenderResources()->GetCommandList()->Close();
+	m_pRender->GetRenderResources()->ExecuteCommandList();
+	m_pRender->GetRenderResources()->FlushQueue();
+	return pTexture;
 }
 
 void GraphicEngine::UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix)
