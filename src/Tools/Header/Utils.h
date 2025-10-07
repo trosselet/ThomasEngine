@@ -64,6 +64,15 @@ namespace Utils
 		OutputDebugStringW(os.str().c_str());
 	}
 #pragma endregion
+
+
+#pragma region Mathematical Tools
+	inline float Lerp(float start, float end, float time)
+	{
+		return start + time * (end - start);
+	}
+#pragma endregion
+
 }
 
 

@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "Header/GameObject.h"
 
+#include "Tools/Header/Color.h"
+#include "Render/Header/Geometry.h"
+
 GameObject::GameObject(Scene& scene):
     m_pScene(&scene)
 {
@@ -93,4 +96,20 @@ std::vector<GameObject*>& GameObject::GetChildren()
 void GameObject::SetName(int8 const* name)
 {
     m_pName = name;
+}
+
+void GameObject::SetColor(Color color)
+{
+    Geometry* geo = GetComponent<MeshRenderer>().GetGeometry();
+
+    if (!geo)
+        return;
+
+    for (int i = 0; i < geo->positions.size(); i++)
+    {
+        geo->colors[i].x = color.r;
+        geo->colors[i].y = color.g;
+        geo->colors[i].z = color.b;
+        geo->colors[i].w = color.a;
+    }
 }

@@ -110,6 +110,11 @@ void MeshRenderer::SetCube(const char* texturePath)
 	m_primitive = true;
 }
 
+Geometry* MeshRenderer::GetGeometry()
+{
+	return m_pGeometry;
+}
+
 void MeshRenderer::SetSphere()
 {
 	Free();

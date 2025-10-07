@@ -13,7 +13,7 @@
 #include "Engine/Header/ScriptSystem.h"
 
 struct Component;
-
+class Color;
 
 class GameObject
 {
@@ -49,6 +49,7 @@ public:
 	std::vector<GameObject*>& GetChildren();
 
 	void SetName(int8 const* name);
+	void SetColor(Color color);
 
 private:
 	bool m_created = false;

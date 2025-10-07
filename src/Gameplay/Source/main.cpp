@@ -47,6 +47,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     pCube1MeshRendererTest.SetCube();
     pCube1->SetName("Cube");
 
+    GameObject* const pSky = new GameObject(scene);
+    pSky->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    pSky->transform.SetScaling(Vector3{ -10000.0f, -10000.0f, -10000.0f });
+    MeshRenderer& pSkyMeshRendererTest = pSky->AddComponent<MeshRenderer>();
+    pSkyMeshRendererTest.SetSphere("sky.dds");
+    pSky->SetName("Sky");
+
+    pCube1->SetColor(Color::Transparent);
+
     GameManager::Run();
     GameManager::Release();
 

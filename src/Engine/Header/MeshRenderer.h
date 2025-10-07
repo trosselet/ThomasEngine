@@ -28,6 +28,8 @@ public:
 	void SetCube();
 	void SetCube(const char* texturePath);
 
+	Geometry* GetGeometry();
+
 private:
 	void Free();
 
