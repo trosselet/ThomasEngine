@@ -26,33 +26,39 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     GameObject* const pRectangle = new GameObject(scene);
     pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
     MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();
-    pRectangleMeshRendererTest.SetRectangle();
+    pRectangleMeshRendererTest.SetRectangle(Color::White);
     pRectangle->SetName("Rectangle1");
 
     GameObject* const pSphere1 = new GameObject(scene);
     pSphere1->transform.SetPosition({ 1.5f, 0.0f, 5.0f });
     MeshRenderer& pSphere1MeshRendererTest = pSphere1->AddComponent<MeshRenderer>();
-    pSphere1MeshRendererTest.SetSphere();
+    pSphere1MeshRendererTest.SetSphere(Color::White);
     pSphere1->SetName("Sphere1");
    
     GameObject* const pCircle1 = new GameObject(scene);
     pCircle1->transform.SetPosition({ 3.0f, 0.0f, 5.0f });
     MeshRenderer& pCircle1MeshRendererTest = pCircle1->AddComponent<MeshRenderer>();
-    pCircle1MeshRendererTest.SetCircle();
+    pCircle1MeshRendererTest.SetCircle(Color::White);
     pCircle1->SetName("Circle1");
    
     GameObject* const pCube1 = new GameObject(scene);
     pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
     MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
-    pCube1MeshRendererTest.SetCube();
+    pCube1MeshRendererTest.SetCube("wood.dds", Color::White);
     pCube1->SetName("Cube");
 
     GameObject* const pSky = new GameObject(scene);
     pSky->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pSky->transform.SetScaling(Vector3{ -10000.0f, -10000.0f, -10000.0f });
     MeshRenderer& pSkyMeshRendererTest = pSky->AddComponent<MeshRenderer>();
-    pSkyMeshRendererTest.SetSphere("sky.dds");
+    pSkyMeshRendererTest.SetSphere("sky.dds", Color::White);
     pSky->SetName("Sky");
+
+    /*GameObject* const pObj = new GameObject(scene);
+    pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
+    pObjMeshRendererTest.SetObjFile("bugatti.obj");
+    pObj->SetName("Obj");*/
 
     GameManager::Run();
     GameManager::Release();

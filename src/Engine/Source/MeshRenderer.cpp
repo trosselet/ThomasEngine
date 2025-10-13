@@ -11,7 +11,7 @@
 #include "Render/Header/Window.h"
 
 
-#include "../Tools/Header/Color.h"
+#include "Tools/Header/Color.h"
 
 MeshRenderer::~MeshRenderer()
 {
@@ -107,6 +107,32 @@ void MeshRenderer::SetCube(const char* texturePath, Color c)
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
 	m_pMaterial = graphics.CreateMaterial();
 	m_pMaterial->SetTexture(m_pTexture);
+	m_primitive = true;
+}
+
+void MeshRenderer::SetObjFile(const char* objPath)
+{
+	SetObjFileInternal(objPath, "DefaultTex.dds");
+}
+
+void MeshRenderer::SetObjFile(const char* objPath, const char* texturePath)
+{
+	SetObjFileInternal(objPath, texturePath);
+}
+
+void MeshRenderer::SetObjFileInternal(const char* objPath, const char* texturePath)
+{
+	Free();
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreateGeometryFromObjFile(objPath);
+
+	Texture* pTexture = graphics.CreateTexture(texturePath);
+
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(pTexture);
+
 	m_primitive = true;
 }
 

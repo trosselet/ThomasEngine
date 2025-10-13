@@ -11,6 +11,8 @@
 #include "Header/Mesh.h"
 #include "Header/Material.h"
 #include "Header/Texture.h"
+#include "Header/ObjFactory.h"
+
 
 #include "Header/UploadBuffer.h"
 
@@ -52,6 +54,11 @@ Geometry* GraphicEngine::CreatePrimitiveGeometry(PrimitiveGeometryType primitive
 	}
 
 	return pResult;
+}
+
+Geometry* GraphicEngine::CreateGeometryFromObjFile(const char* objPath, Color color)
+{
+	return ObjFactory::LoadObjFile(objPath, color);
 }
 
 Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)

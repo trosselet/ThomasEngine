@@ -17,17 +17,22 @@ public:
 
 	uint8 renderLayer = 0;
 
-	void SetRectangle(Color c = Color::White);
-	void SetRectangle(const char* texturePath, Color c = Color::White);
+	void SetRectangle(Color c);
+	void SetRectangle(const char* texturePath, Color c);
 
-	void SetCircle(Color c = Color::White);
-	void SetCircle(const char* texturePath, Color c = Color::White);
+	void SetCircle(Color c);
+	void SetCircle(const char* texturePath, Color c);
 
-	void SetSphere(Color c = Color::White);
-	void SetSphere(const char* texturePath, Color c = Color::White);
+	void SetSphere(Color c);
+	void SetSphere(const char* texturePath, Color c);
 
-	void SetCube(Color c = Color::White);
-	void SetCube(const char* texturePath, Color c = Color::White);
+	void SetCube(Color c);
+	void SetCube(const char* texturePath, Color c);
+
+	void SetObjFile(const char* objPath);
+	void SetObjFile(const char* objPath, const char* texturePath);
+
+	void SetObjFileInternal(const char* objPath, const char* texturePath);
 
 	Geometry* GetGeometry();
 	Mesh* GetMesh();
