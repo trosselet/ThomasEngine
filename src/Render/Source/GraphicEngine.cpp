@@ -24,6 +24,11 @@ GraphicEngine::GraphicEngine(const Window* pWindow)
 
 GraphicEngine::~GraphicEngine()
 {
+
+	m_textureCache.Release();
+	m_geometryCache.Release();
+	m_meshCache.Release();
+
 	delete m_pRender;
 }
 
@@ -131,6 +136,33 @@ void GraphicEngine::UpdateCameraTo(Vector3 const& position, Vector3 const& targe
 	DirectX::XMStoreFloat4x4(&camera.viewMatrix, viewMatrix);
 
 	m_pRender->m_pCbCurrentViewProjInstance->CopyData(0, camera);
+}
+
+Mesh* GraphicEngine::CreateMeshDeferred(Geometry* pGeometry)
+{
+	Mesh* mesh = new Mesh(pGeometry, m_pRender, true);
+	m_pendingMeshUploads.push_back(mesh);
+	return mesh;
+}
+
+void GraphicEngine::ProcessPendingUploads()
+{
+	if (m_pendingMeshUploads.empty()) return;
+
+	auto* res = m_pRender->GetRenderResources();
+	res->ResetCommandList();
+
+	for (Mesh* mesh : m_pendingMeshUploads)
+		mesh->UploadBuffersDeferred(res->GetCommandList());
+
+	res->GetCommandList()->Close();
+	res->ExecuteCommandList();
+	res->FlushQueue();
+
+	for (Mesh* mesh : m_pendingMeshUploads)
+		mesh->ReleaseUploadBuffers();
+
+	m_pendingMeshUploads.clear();
 }
 
 Render* GraphicEngine::GetRender()

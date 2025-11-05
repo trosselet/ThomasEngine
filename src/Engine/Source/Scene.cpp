@@ -6,6 +6,9 @@
 #include "Header/RenderSystem.h"
 #include "Header/Camera.h"
 
+#include "../Render/Header/Window.h"
+#include "../Render/Header/GraphicEngine.h"
+
 Scene::~Scene()
 {
     for (GameObject* pGameObject : m_gameObjects)
@@ -121,6 +124,8 @@ void Scene::HandleCreation()
         GameManager::GetRenderSystem().m_meshRenderers[pMeshRenderer->renderLayer].push_back(pMeshRenderer);
     }
     m_meshRenderersToCreate.clear();
+
+    GameManager::GetWindow().GetGraphicEngine()->ProcessPendingUploads();
 
     for (Camera* const pCamera : m_camerasToCreate)
     {

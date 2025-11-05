@@ -50,6 +50,11 @@ private:
 	Texture* m_pTexture = nullptr;
 
 private:
+	bool m_ownsGeometry = true;
+	bool m_ownsMesh = true;
+	bool m_ownsMaterial = true;
+
+private:
 	friend class RenderSystem;
 };
 

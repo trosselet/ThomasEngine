@@ -15,7 +15,7 @@ Material::Material(Render* pRender) :
 
 Material::~Material()
 {
-	if (m_pTexture)
+ 	if (m_pTexture && !m_isInCache)
 	{
 		delete m_pTexture;
 		m_pTexture = nullptr;
@@ -34,9 +34,10 @@ void Material::UpdateWorldConstantBuffer(DirectX::XMMATRIX const& matrix)
 	m_uploadBuffer.CopyData(0, dataCb);
 }
 
-void Material::SetTexture(Texture* pTexture)
+void Material::SetTexture(Texture* pTexture, bool fromCache)
 {
 	m_pTexture = pTexture;
+	m_isInCache = !fromCache;
 }
 
 bool Material::UpdateTexture(int16 position)

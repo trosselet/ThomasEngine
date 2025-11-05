@@ -125,13 +125,30 @@ void MeshRenderer::SetObjFileInternal(const char* objPath, const char* texturePa
 	Free();
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreateGeometryFromObjFile(objPath);
+	std::string geomKey = std::string("obj:") + objPath;
+	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry* 
+		{
+			return graphics.CreateGeometryFromObjFile(objPath);
+		});
+	m_ownsGeometry = false;
 
-	Texture* pTexture = graphics.CreateTexture(texturePath);
 
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	std::string texKey = std::string("tex:") + texturePath;
+	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture* 
+		{
+			return graphics.CreateTexture(texturePath);
+		});
+	m_ownsMaterial = false;
+
+	std::string meshKey = geomKey + std::string("_mesh");
+	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]()->Mesh* 
+		{
+			return graphics.CreateMeshDeferred(m_pGeometry);
+		});
+	m_ownsMesh = false;
+
 	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(pTexture);
+	m_pMaterial->SetTexture(pTexture, m_ownsMaterial);
 
 	m_primitive = true;
 }
@@ -185,23 +202,24 @@ void MeshRenderer::Free()
 {
 	if (m_primitive == false) return;
 
-	if (m_pGeometry)
+	if (m_pGeometry && m_ownsGeometry)
 	{
 		delete m_pGeometry;
-		m_pGeometry = nullptr;
 	}
 
 	if (m_pMaterial)
 	{
 		delete m_pMaterial;
-		m_pMaterial = nullptr;
 	}
 
-	if (m_pMesh)
+	if (m_pMesh && m_ownsMesh)
 	{
 		delete m_pMesh;
-		m_pMesh = nullptr;
 	}
+
+	m_pGeometry = nullptr;
+	m_pMaterial = nullptr;
+	m_pMesh = nullptr;
 
 	m_primitive = false;
 }

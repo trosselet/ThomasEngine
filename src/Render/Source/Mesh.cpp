@@ -5,12 +5,20 @@
 #include "Header/UploadBuffer.h"
 #include "Header/RenderResources.h"
 
-Mesh::Mesh(Geometry* pGeometry, Render* pRender)
+Mesh::Mesh(Geometry* pGeometry, Render* pRender, bool deferUpload)
 {
 	m_pGeometry = pGeometry;
 	m_pRender = pRender;
 
-	UploadGeometry();
+    if (deferUpload)
+    {
+        UploadGeometry(true);
+    }
+    else
+    {
+        UploadGeometry(false);
+    }
+
 }
 
 Mesh::~Mesh()
@@ -60,7 +68,7 @@ void Mesh::ReleaseUploadBuffers()
     }
 }
 
-void Mesh::UploadGeometry()
+void Mesh::UploadGeometry(bool deferred)
 {
     if (!m_pGeometry) return;
 
@@ -76,10 +84,6 @@ void Mesh::UploadGeometry()
     if (hasNormal)floatStride += 3;
 
     size_t vertexCount = m_pGeometry->positions.size();
-    if (hasColor && m_pGeometry->colors.size() != vertexCount) { Utils::DebugError("Color count mismatch"); return; }
-    if (hasUv && m_pGeometry->UVs.size() != vertexCount) { Utils::DebugError("UV count mismatch"); return; }
-    if (hasNormal && m_pGeometry->normals.size() != vertexCount) { Utils::DebugError("Normal count mismatch"); return; }
-
     geometryData.reserve(vertexCount * floatStride);
 
     for (size_t i = 0; i < vertexCount; ++i)
@@ -110,13 +114,25 @@ void Mesh::UploadGeometry()
         }
     }
 
-    UploadBuffers(geometryData.data(),
-        static_cast<UINT>(m_pGeometry->positions.size()),
-        m_pGeometry->indicies.data(),
-        static_cast<UINT>(m_pGeometry->indicies.size()),
-        static_cast<UINT>(floatStride));
+    if (deferred)
+    {
+        m_pendingVertices = geometryData;
+        m_pendingIndices = m_pGeometry->indicies;
+        m_pendingFloatStride = floatStride;
+        m_vertexCount = static_cast<UINT>(vertexCount);
+        m_indexCount = static_cast<UINT>(m_pGeometry->indicies.size());
+    }
+    else
+    {
+        UploadBuffers(
+            geometryData.data(),
+            static_cast<UINT>(vertexCount),
+            m_pGeometry->indicies.data(),
+            static_cast<UINT>(m_pGeometry->indicies.size()),
+            static_cast<UINT>(floatStride)
+        );
+    }
 }
-
 
 void Mesh::UploadBuffers(float32* vertices, UINT vertexCount, uint32* indices, UINT indexCount, UINT floatStride)
 {
@@ -177,4 +193,20 @@ void Mesh::UploadBuffers(float32* vertices, UINT vertexCount, uint32* indices, U
     m_pIndexBufferUploader->SetName(L"IBufferUploader");
     m_pIndexBufferGPU->SetName(L"IBufferGPU");
 
+}
+
+void Mesh::UploadBuffersDeferred(ID3D12GraphicsCommandList* commandList)
+{
+    if (m_pendingVertices.empty() || m_pendingIndices.empty()) return;
+
+    UploadBuffers(
+        m_pendingVertices.data(),
+        m_vertexCount,
+        m_pendingIndices.data(),
+        m_indexCount,
+        m_pendingFloatStride
+    );
+
+    m_pendingVertices.clear();
+    m_pendingIndices.clear();
 }

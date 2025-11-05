@@ -15,17 +15,17 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 
-#include <fbxsdk.h>
-
-#ifdef _DEBUG
-#pragma comment(lib, "libfbxsdk-mt.lib")
-#pragma comment(lib, "zlib-mt.lib")
-#pragma comment(lib, "libxml2-mt.lib")
-#else
-#pragma comment(lib, "libfbxsdk-mt.lib")
-#pragma comment(lib, "zlib-mt.lib")
-#pragma comment(lib, "libxml2-mt.lib")
-#endif
+//#include <fbxsdk.h>
+//
+//#ifdef _DEBUG
+//#pragma comment(lib, "libfbxsdk-mt.lib")
+//#pragma comment(lib, "zlib-mt.lib")
+//#pragma comment(lib, "libxml2-mt.lib")
+//#else
+//#pragma comment(lib, "libfbxsdk-mt.lib")
+//#pragma comment(lib, "zlib-mt.lib")
+//#pragma comment(lib, "libxml2-mt.lib")
+//#endif
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "winmm.lib")

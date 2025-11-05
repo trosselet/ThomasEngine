@@ -17,7 +17,7 @@ public:
 	UploadBuffer<ObjectData>* GetUploadBuffer();
 	void UpdateWorldConstantBuffer(DirectX::XMMATRIX const& matrix);
 
-	void SetTexture(Texture* pTexture);
+	void SetTexture(Texture* pTexture, bool fromCache = true);
 	bool UpdateTexture(int16 position);
 	Texture* GetTexture();
 
@@ -26,6 +26,8 @@ private:
 
 	Texture* m_pTexture;
 	Render* m_pRender;
+
+	bool m_isInCache = false;
 };
 
 #endif // !MATERIAL_INCLUDE__H

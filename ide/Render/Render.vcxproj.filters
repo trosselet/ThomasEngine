@@ -61,6 +61,9 @@
     <ClInclude Include="$(SolutionDir)..\src\Render\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Render\Header\ResourcesCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)..\src\Render\Source\DDSTextureLoader.cpp">
@@ -97,6 +100,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)..\src\Render\pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Render\Source\ResourcesCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

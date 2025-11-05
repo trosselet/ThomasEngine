@@ -61,6 +61,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     pObjMeshRendererTest.SetObjFile("Bus.obj", "Bus.dds");
     pObj->SetName("Obj");
 
+    GameObject* const pObj1 = new GameObject(scene);
+    pObj1->transform.SetPosition({ 5.0f, 0.0f, 0.0f });
+    pObj1->transform.SetScaling(Vector3{ 0.0009f, 0.0009f, 0.0009f });
+    MeshRenderer& pObj1MeshRendererTest = pObj1->AddComponent<MeshRenderer>();
+    pObj1MeshRendererTest.SetObjFile("Bus.obj", "Bus.dds");
+    pObj1->SetName("Obj2");
+
     GameManager::Run();
     GameManager::Release();
 
