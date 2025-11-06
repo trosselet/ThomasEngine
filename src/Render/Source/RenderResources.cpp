@@ -1,6 +1,16 @@
 #include "pch.h"
 #include "Header/RenderResources.h"
 
+#if _EXE
+
+#define SHADER_PATH L"../res/Gameplay/shaders/shader.hlsl"
+
+#else
+
+#define SHADER_PATH L"../../res/Gameplay/shaders/shader.hlsl"
+
+#endif
+
 RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 {
 	CreateDXGIFactory();
@@ -16,7 +26,7 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateDepthStencilResources(width, height);
 	CreateCommandAllocator(m_pDevice);
 
-	CreatePipelineState(m_pDevice, L"../../res/Gameplay/shaders/shader.hlsl");
+	CreatePipelineState(m_pDevice, SHADER_PATH);
 	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
 }
 

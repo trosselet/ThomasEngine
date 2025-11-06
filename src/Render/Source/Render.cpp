@@ -5,7 +5,6 @@
 
 #include "Header/Mesh.h"
 #include "Header/Material.h"
-#include "Header/UploadBuffer.h"
 
 Render::Render(const Window* pWindow)
 {

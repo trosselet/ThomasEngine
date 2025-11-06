@@ -1,14 +1,15 @@
 #ifndef RENDER_INCLUDE__H
 #define RENDER_INCLUDE__H
 
+#include "Header/UploadBuffer.h"
+
 class Window;
 class RenderResources;
 
 class Mesh;
 class Material;
 
-template<typename T>
-class UploadBuffer;
+
 
 struct CameraCB;
 

@@ -6,9 +6,19 @@
 #include "Header/Render.h"
 #include "Header/RenderResources.h"
 
+#if _EXE
+
+#define TEXTURE_PATH "../res/Gameplay/textures/"
+
+#else
+
+#define TEXTURE_PATH "../../res/Gameplay/textures/"
+
+#endif
+
 Texture::Texture(int8 const* path, GraphicEngine* pGraphic) : m_pTexture(nullptr), m_pTextureUploadHeap(nullptr), m_path(path)
 {
-    std::string filePath = "../../res/Gameplay/textures/" + std::string(reinterpret_cast<const char*>(path));
+    std::string filePath = TEXTURE_PATH + std::string(reinterpret_cast<const char*>(path));
     std::wstring wPath(filePath.begin(), filePath.end());
 
     HRESULT hr = DirectX::CreateDDSTextureFromFile12(
