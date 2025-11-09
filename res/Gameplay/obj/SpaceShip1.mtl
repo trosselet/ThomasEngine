@@ -1,0 +1,14 @@
+# Blender 4.1.1 MTL File: 'SpaceShip.blend'
+# www.blender.org
+
+newmtl Material.003
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:/Téléchargement/spaceship/source/Texture/StarShip2/Material.001_Base_color.jpg
+map_Ns D:/Téléchargement/spaceship/source/Texture/StarShip2/Material.001_Roughness.jpg
+map_refl D:/Téléchargement/spaceship/source/Texture/StarShip2/Material.001_Metallic.jpg
+map_Ke D:/Téléchargement/spaceship/source/Texture/StarShip2/Material.001_Emissive.jpg
+map_Bump -bm 1.000000 D:/Téléchargement/spaceship/source/Texture/StarShip2/Material.001_Normal_DirectX.jpg
