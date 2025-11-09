@@ -58,14 +58,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdS
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pObj->transform.SetScaling(Vector3{ 0.0009f, 0.0009f, 0.0009f });
     MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
-    pObjMeshRendererTest.SetObjFile("Bus.obj", "Bus.dds");
+    pObjMeshRendererTest.SetMeshFile("Bus.obj", "Bus.dds");
     pObj->SetName("Obj");
 
     GameObject* const pObj1 = new GameObject(scene);
     pObj1->transform.SetPosition({ 5.0f, 0.0f, 0.0f });
-    pObj1->transform.SetScaling(Vector3{ 0.0009f, 0.0009f, 0.0009f });
+    pObj1->transform.RotateYPR({ 0.0f, 55.0f, 0.0f });
+    pObj1->transform.SetScaling(Vector3{ 1.f, 1.f, 1.f });
     MeshRenderer& pObj1MeshRendererTest = pObj1->AddComponent<MeshRenderer>();
-    pObj1MeshRendererTest.SetObjFile("Bus.obj", "Bus.dds");
+    pObj1MeshRendererTest.SetMeshFile("Dragon.fbx", "Dragon.dds");
     pObj1->SetName("Obj2");
 
     GameManager::Run();

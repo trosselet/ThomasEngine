@@ -11,7 +11,6 @@ class ObjFactory
 {
 public:
 	static Geometry* LoadObjFile(const char* filePath, Color color);
-
 };
 
 

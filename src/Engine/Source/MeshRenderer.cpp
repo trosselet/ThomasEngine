@@ -13,6 +13,9 @@
 
 #include "Tools/Header/Color.h"
 
+
+#include <filesystem>
+
 MeshRenderer::~MeshRenderer()
 {
 	Free();
@@ -110,25 +113,27 @@ void MeshRenderer::SetCube(const char* texturePath, Color c)
 	m_primitive = true;
 }
 
-void MeshRenderer::SetObjFile(const char* objPath)
+void MeshRenderer::SetMeshFile(const char* objPath)
 {
-	SetObjFileInternal(objPath, "DefaultTex.dds");
+	SetMeshFileInternal(objPath, "DefaultTex.dds");
 }
 
-void MeshRenderer::SetObjFile(const char* objPath, const char* texturePath)
+void MeshRenderer::SetMeshFile(const char* objPath, const char* texturePath)
 {
-	SetObjFileInternal(objPath, texturePath);
+	SetMeshFileInternal(objPath, texturePath);
 }
 
-void MeshRenderer::SetObjFileInternal(const char* objPath, const char* texturePath)
+void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* texturePath)
 {
 	Free();
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	std::string geomKey = std::string("obj:") + objPath;
+	std::string extension = std::filesystem::path(objPath).extension().string();
+
+	std::string geomKey = extension + ":" + objPath;
 	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry* 
 		{
-			return graphics.CreateGeometryFromObjFile(objPath);
+			return graphics.CreateGeometryFromFile(objPath, extension.c_str());
 		});
 	m_ownsGeometry = false;
 

@@ -268,6 +268,7 @@
     <ClInclude Include="$(SolutionDir)..\src\Render\Header\UploadBuffer.h" />
     <ClInclude Include="$(SolutionDir)..\src\Render\Header\Window.h" />
     <ClInclude Include="$(SolutionDir)..\src\Render\pch.h" />
+    <ClInclude Include="..\..\src\Render\Header\FbxFactory.h" />
     <ClInclude Include="..\..\src\Render\Header\ResourcesCache.h" />
   </ItemGroup>
   <ItemGroup>
@@ -293,6 +294,7 @@
     <ClCompile Include="$(SolutionDir)..\src\Render\Source\Texture.cpp" />
     <ClCompile Include="$(SolutionDir)..\src\Render\Source\UploadBuffer.cpp" />
     <ClCompile Include="$(SolutionDir)..\src\Render\Source\Window.cpp" />
+    <ClCompile Include="..\..\src\Render\Source\FbxFactory.cpp" />
     <ClCompile Include="..\..\src\Render\Source\ResourcesCache.cpp" />
   </ItemGroup>
   <ItemGroup>

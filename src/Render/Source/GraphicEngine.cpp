@@ -12,6 +12,7 @@
 #include "Header/Material.h"
 #include "Header/Texture.h"
 #include "Header/ObjFactory.h"
+#include "Header/FbxFactory.h"
 
 
 #include "Header/UploadBuffer.h"
@@ -61,9 +62,12 @@ Geometry* GraphicEngine::CreatePrimitiveGeometry(PrimitiveGeometryType primitive
 	return pResult;
 }
 
-Geometry* GraphicEngine::CreateGeometryFromObjFile(const char* objPath, Color color)
+Geometry* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char* extension, Color color)
 {
-	return ObjFactory::LoadObjFile(objPath, color);
+	if (strcmp(extension, ".obj") == 0)
+		return ObjFactory::LoadObjFile(meshPath, color);
+	else if (strcmp(extension, ".fbx") == 0)
+		return FbxFactory::LoadFbxFile(meshPath, color);
 }
 
 Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)

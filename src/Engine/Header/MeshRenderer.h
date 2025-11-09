@@ -29,10 +29,10 @@ public:
 	void SetCube(Color c);
 	void SetCube(const char* texturePath, Color c);
 
-	void SetObjFile(const char* objPath);
-	void SetObjFile(const char* objPath, const char* texturePath);
+	void SetMeshFile(const char* objPath);
+	void SetMeshFile(const char* objPath, const char* texturePath);
 
-	void SetObjFileInternal(const char* objPath, const char* texturePath);
+	void SetMeshFileInternal(const char* objPath, const char* texturePath);
 
 	Geometry* GetGeometry();
 	Mesh* GetMesh();

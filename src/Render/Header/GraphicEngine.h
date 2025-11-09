@@ -28,7 +28,7 @@ public:
 	void Display();
 
 	Geometry* CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color);
-	Geometry* CreateGeometryFromObjFile(const char* objPath, Color color = Color::White);
+	Geometry* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
 	Mesh* CreateMesh(Geometry* pGeometry);
 	Material* CreateMaterial();
 	Texture* CreateTexture(char const* filePath);
