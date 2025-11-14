@@ -1,0 +1,19 @@
+project(Tools LANGUAGES CXX)
+
+file(GLOB_RECURSE TOOLS_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Header/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Header/*.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.inl
+
+)
+
+add_library(Tools STATIC ${TOOLS_SOURCES})
+
+target_include_directories(Tools PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
+)

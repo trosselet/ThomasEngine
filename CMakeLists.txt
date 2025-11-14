@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 3.20)
+project(ThomasEngine LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_compile_options("$<$<C_COMPILER_ID:MSVC>:/W4>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/W4>")
+
+set(OUTPUT_ROOT "${CMAKE_SOURCE_DIR}/out")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_ROOT}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_ROOT}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_ROOT}/lib)
+
+foreach(OUTPUTCONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OUTPUT_ROOT}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OUTPUT_ROOT}/lib)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OUTPUT_ROOT}/lib)
+endforeach()
+
+add_subdirectory(Tools)
+add_subdirectory(Render)
+add_subdirectory(Engine)
+add_subdirectory(Gameplay)
