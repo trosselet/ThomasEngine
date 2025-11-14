@@ -9,11 +9,11 @@
 
 #if _EXE
 
-#define OBJ_PATH "obj/"
+#define OBJ_PATH "assets/"
 
 #else
 
-#define OBJ_PATH "obj/"
+#define OBJ_PATH "assets/"
 
 #endif
 

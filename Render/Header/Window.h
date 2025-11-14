@@ -8,9 +8,9 @@ class Window
 public:
 	~Window();
 
-	Window(HINSTANCE hInstance=nullptr, uint32 width=900, uint32 height=600, const wchar_t* windowTitle=L"Base Window");
+	Window(HINSTANCE hInstance=nullptr, uint32 width=900, uint32 height=600, LPCSTR windowTitle="Thomas Engine");
 
-	bool IsOpen();
+	bool IsOpen() const;
 
 	HINSTANCE GetHInstance() const;
 	uint32 GetWidth() const;
@@ -31,7 +31,7 @@ private:
 	HINSTANCE m_hInstance = nullptr;
 	uint32 m_width = 0;
 	uint32 m_height = 0;
-	const wchar_t* m_windowTitle = nullptr;
+	LPCSTR m_windowTitle = nullptr;
 	HWND m_hwnd = nullptr;
 
 	bool m_isOpen = false;

@@ -66,7 +66,7 @@ Window::~Window()
 	}
 }
 
-Window::Window(HINSTANCE hInstance, uint32 width, uint32 height, const wchar_t* windowTitle)
+Window::Window(HINSTANCE hInstance, uint32 width, uint32 height, LPCSTR windowTitle)
 {
 	m_hInstance = hInstance;
 	m_width = width;
@@ -78,20 +78,19 @@ Window::Window(HINSTANCE hInstance, uint32 width, uint32 height, const wchar_t* 
 
 bool Window::Initialize()
 {
-	const wchar_t CLASS_NAME[] = L"Sample Window Class";
 	
 	WNDCLASS wc = {};
 
 	wc.lpfnWndProc = WindowProc;
 	wc.hInstance = m_hInstance;
-	wc.lpszClassName = (LPCSTR)CLASS_NAME;
+	wc.lpszClassName = "Sample Window Class";
 
 	RegisterClass(&wc);
 
 	m_hwnd = CreateWindowEx(
 		0,
-		(LPCSTR)CLASS_NAME,
-		(LPCSTR)m_windowTitle,
+		wc.lpszClassName,
+		m_windowTitle,
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -145,7 +144,7 @@ void Window::OnDestroy()
 
 #pragma region GetWindowInformation
 
-bool Window::IsOpen()
+bool Window::IsOpen() const
 {
 	return m_isOpen;
 }
