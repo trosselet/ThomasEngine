@@ -21,12 +21,9 @@ public:
 	Render(const Window* pWindow);
 	~Render();
 
-	void Clear(RenderTarget* target);
+	void Clear();
 	void Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix);
 	void Display();
-
-	void BeginRenderTarget(RenderTarget* pRT);
-	void EndRenderTarget(RenderTarget* pRT);
 
 	RenderResources* GetRenderResources();
 

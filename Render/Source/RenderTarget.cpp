@@ -26,7 +26,7 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 
 	D3D12_CLEAR_VALUE clearValue = {};
 	clearValue.Format = format;
-	clearValue.Color[0] = 0.0f;
+	clearValue.Color[0] = 1.0f;
 	clearValue.Color[1] = 0.0f;
 	clearValue.Color[2] = 0.0f;
 	clearValue.Color[3] = 1.0f;
@@ -51,7 +51,7 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 		assert(m_pColor != nullptr);
 	}
 
-	m_rtvCpu = m_pResources->CreateRTV(m_pColor);
+	//m_rtvCpu = m_pResources->CreateRTV(m_pColor);
 
 	if (m_hasDepth)
 	{
@@ -93,7 +93,7 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 		}
 
 
-		m_dsvCpu = m_pResources->CreateDSV(m_pDepth);
+		//m_dsvCpu = m_pResources->CreateDSV(m_pDepth);
 	}
 
 	m_viewport = { 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f };
@@ -131,5 +131,5 @@ void RenderTarget::Transition(ID3D12GraphicsCommandList* cmdList, D3D12_RESOURCE
 
 	cmdList->ResourceBarrier(1, &barrier);
 
-	m_currentState = newState;  // <-- Met à jour l’état réel
+	m_currentState = newState;
 }

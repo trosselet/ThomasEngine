@@ -56,7 +56,7 @@ private:
     D3D12_VIEWPORT m_viewport = {};
     D3D12_RECT m_scissor = {};
 
-    D3D12_RESOURCE_STATES m_currentState;
+    D3D12_RESOURCE_STATES m_currentState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 };
 

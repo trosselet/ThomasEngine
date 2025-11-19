@@ -35,7 +35,7 @@ GraphicEngine::~GraphicEngine()
 
 void GraphicEngine::BeginDraw()
 {
-	//m_pRender->Clear();
+	m_pRender->Clear();
 }
 
 void GraphicEngine::RenderFrame(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix)
@@ -46,32 +46,6 @@ void GraphicEngine::RenderFrame(Mesh* pMesh, Material* pMaterial, DirectX::XMFLO
 void GraphicEngine::Display()
 {
 	m_pRender->Display();
-}
-
-void GraphicEngine::BeginMainRenderTarget()
-{
-	if (!m_pMainRenderTarget)
-		return;
-	m_pRender->Clear(m_pMainRenderTarget);
-}
-
-void GraphicEngine::RenderToBackBuffer(RenderTarget* source)
-{
-	if (!source) return;
-
-	RenderResources* res = m_pRender->GetRenderResources();
-	RenderTarget* backBufferRT = res->GetCurrentRenderTarget();
-	ID3D12Resource* backBuffer = backBufferRT->GetResource();
-	ID3D12Resource* sourceResource = source->GetResource();
-
-	backBufferRT->Transition(res->GetCommandList(), D3D12_RESOURCE_STATE_COPY_DEST);
-	source->Transition(res->GetCommandList(), D3D12_RESOURCE_STATE_COPY_SOURCE);
-
-	res->GetCommandList()->CopyResource(backBuffer, sourceResource);
-
-	backBufferRT->Transition(res->GetCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-	source->Transition(res->GetCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-
 }
 
 Geometry* GraphicEngine::CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color)
@@ -195,16 +169,6 @@ void GraphicEngine::ProcessPendingUploads()
 		mesh->ReleaseUploadBuffers();
 
 	m_pendingMeshUploads.clear();
-}
-
-std::vector<RenderTarget*> GraphicEngine::GetRenderTargets() const
-{
-	return m_renderTargets;
-}
-
-RenderTarget* GraphicEngine::GetMainRenderTarget() const
-{
-	return m_pMainRenderTarget;
 }
 
 Render* GraphicEngine::GetRender()

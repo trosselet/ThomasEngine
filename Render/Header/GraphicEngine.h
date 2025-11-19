@@ -28,9 +28,6 @@ public:
 	void RenderFrame(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix);
 	void Display();
 
-	void BeginMainRenderTarget();
-	void RenderToBackBuffer(RenderTarget* source);
-
 	Geometry* CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color);
 	Geometry* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
 	Mesh* CreateMesh(Geometry* pGeometry);
@@ -49,8 +46,6 @@ public:
 	Render* GetRender();
 
 public:
-	RenderTarget* m_pMainRenderTarget;
-	std::vector<RenderTarget*> m_renderTargets;
 	std::vector<Mesh*> m_pendingMeshUploads;
 
 	ResourcesCache<Texture> m_textureCache;
