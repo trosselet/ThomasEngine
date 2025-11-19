@@ -14,11 +14,13 @@
 RenderSystem::RenderSystem(GraphicEngine* pGraphic)
 {
 	m_pGraphic = pGraphic;
+
+
 }
 
 void RenderSystem::Rendering()
 {
-	m_pGraphic->BeginDraw();
+	m_pGraphic->BeginMainRenderTarget();
 
 	GameObject* pCamera = GameManager::GetActiveScene().GetMainCamera();
 	Camera& cameraComponent = pCamera->GetComponent<Camera>();
@@ -43,5 +45,8 @@ void RenderSystem::Rendering()
 				m_pGraphic->RenderFrame(pMeshRenderer->m_pMesh, pMeshRenderer->m_pMaterial, pMeshRenderer->m_pOwner->transform.GetMatrixFLOAT());
 		}
 	}
+
+	m_pGraphic->RenderToBackBuffer(m_pGraphic->GetMainRenderTarget());
+
 	m_pGraphic->Display();
 }

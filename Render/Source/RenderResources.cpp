@@ -1,5 +1,6 @@
 #include <Render/pch.h>
-#include <Render/Header/Renderresources.h>
+#include <Render/Header/RenderResources.h>
+#include <Render/Header/RenderTarget.h>
 
 #if _EXE
 
@@ -21,9 +22,12 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateSwapChain(m_pFactory, m_pCommandQueue, hwnd, width, height);
 	CreateFence(m_pDevice);
 	CreateCbvSrvUavDescriptorHeap();
+
 	m_rtvDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	CreateRenderTargets(m_pDevice);
-	CreateDepthStencilResources(width, height);
+	m_dsvDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	m_cbvSrvUavDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	CreateRenderTargets(width, height);
 	CreateCommandAllocator(m_pDevice);
 
 	CreatePipelineState(m_pDevice, SHADER_PATH);
@@ -34,35 +38,24 @@ RenderResources::~RenderResources()
 {
 	WaitForGpu();
 
-	if (m_pCommandList) { m_pCommandList->Release(); m_pCommandList = nullptr; }
-	if (m_pPipelineState) { m_pPipelineState->Release(); m_pPipelineState = nullptr; }
-	if (m_pRootSignature) { m_pRootSignature->Release(); m_pRootSignature = nullptr; }
-	if (m_pCommandAllocator) { m_pCommandAllocator->Release(); m_pCommandAllocator = nullptr; }
+	for (auto rt : m_renderTargets)
+		delete rt;
 
-	for (uint32 n = 0; n < FrameCount; n++)
-	{
-		if (m_pRenderTargets[n]) { m_pRenderTargets[n]->Release(); m_pRenderTargets[n] = nullptr; }
-	}
-	
-		
-	if (m_pDepthStencil) { m_pDepthStencil->Release(); m_pDepthStencil = nullptr; }
-	if (m_pDsvDescriptorHeap) { m_pDsvDescriptorHeap->Release(); m_pDsvDescriptorHeap = nullptr; }
-	if (m_pCbvSrvUavDescriptorHeap) { m_pCbvSrvUavDescriptorHeap->Release(); m_pCbvSrvUavDescriptorHeap = nullptr; }
-	if (m_pRtvHeap) { m_pRtvHeap->Release(); m_pRtvHeap = nullptr; }
-	if (m_pSwapChain) { m_pSwapChain->Release(); m_pSwapChain = nullptr; }
-	if (m_pCommandQueue) { m_pCommandQueue->Release(); m_pCommandQueue = nullptr; }
+	m_renderTargets.clear();
 
-	if (m_pFence) { m_pFence->Release(); m_pFence = nullptr; }
-	if (m_fenceEvent)
-	{
-		CloseHandle(m_fenceEvent);
-		m_fenceEvent = nullptr;
-	}
-
-	if (m_pDevice) { m_pDevice->Release(); m_pDevice = nullptr; }
-	Utils::DebugWarning("Device destroyed");
-	if (m_pAdapter) { m_pAdapter->Release(); m_pAdapter = nullptr; }
-	if (m_pFactory) { m_pFactory->Release(); m_pFactory = nullptr; }
+	if (m_pCommandList) m_pCommandList->Release();
+	if (m_pPipelineState) m_pPipelineState->Release();
+	if (m_pRootSignature) m_pRootSignature->Release();
+	if (m_pCommandAllocator) m_pCommandAllocator->Release();
+	if (m_pCbvSrvUavDescriptorHeap) m_pCbvSrvUavDescriptorHeap->Release();
+	if (m_pRtvHeap) m_pRtvHeap->Release();
+	if (m_pSwapChain) m_pSwapChain->Release();
+	if (m_pCommandQueue) m_pCommandQueue->Release();
+	if (m_pFence) m_pFence->Release();
+	if (m_fenceEvent) CloseHandle(m_fenceEvent);
+	if (m_pDevice) m_pDevice->Release();
+	if (m_pAdapter) m_pAdapter->Release();
+	if (m_pFactory) m_pFactory->Release();
 
 	IDXGIDebug1* dxgiDebug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
@@ -96,49 +89,11 @@ void RenderResources::Resize(UINT width, UINT height)
 {
 	WaitForGpu();
 
+	m_nextRtvIndex = 0;
+	m_nextDsvIndex = 0;
+	m_nextCbvSrvUavIndex = 0;
 
-	for (UINT i = 0; i < FrameCount; ++i)
-	{
-		if (m_pRenderTargets[i])
-		{
-			m_pRenderTargets[i]->Release();
-		}
-	}
-
-	DXGI_SWAP_CHAIN_DESC desc = {};
-	IDXGISwapChain* pBaseSwapChain = nullptr;
-	if (m_pSwapChain->QueryInterface(IID_PPV_ARGS(&pBaseSwapChain)) == S_OK)
-	{
-		pBaseSwapChain->GetDesc(&desc);
-		pBaseSwapChain->Release();
-	}
-
-	if (m_pSwapChain->ResizeBuffers(FrameCount, width, height, desc.BufferDesc.Format, desc.Flags) != S_OK)
-	{
-		Utils::DebugError("Failed to resize swap chain buffers.");
-		return;
-	}
-
-	IDXGISwapChain3* pSwapChain3 = nullptr;
-	if (m_pSwapChain->QueryInterface(IID_PPV_ARGS(&pSwapChain3)) == S_OK)
-	{
-		m_frameIndex = pSwapChain3->GetCurrentBackBufferIndex();
-		pSwapChain3->Release();
-	}
-	else
-	{
-		m_frameIndex = 0;
-	}
-
-	if (m_pDepthStencil)
-	{
-		m_pDepthStencil->Release();
-	}
-
-	CreateDepthStencilResources(width, height);
-
-	CreateRenderTargets(m_pDevice);
-
+	CreateRenderTargets(width, height);
 	UpdateViewport(width, height);
 }
 
@@ -300,6 +255,61 @@ void RenderResources::Present(bool vsync)
 	m_frameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
 }
 
+D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::CreateRTV(ID3D12Resource* resource)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
+	handle.ptr += (size_t)(m_rtvDescriptorSize * m_nextRtvIndex);
+
+	m_pDevice->CreateRenderTargetView(resource, nullptr, handle);
+
+	m_nextRtvIndex++;
+	return handle;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::CreateDSV(ID3D12Resource* resource)
+{
+	if (!m_pDsvDescriptorHeap)
+	{
+		Utils::DebugError("DSV Heap missing when creating DSV");
+		return D3D12_CPU_DESCRIPTOR_HANDLE{};
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_pDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	handle.ptr += (size_t)m_dsvDescriptorSize * m_nextDsvIndex;
+
+	m_pDevice->CreateDepthStencilView(resource, nullptr, handle);
+
+	m_nextDsvIndex++;
+	return handle;
+}
+
+void RenderResources::CreateSRV(ID3D12Resource* resource, D3D12_SHADER_RESOURCE_VIEW_DESC const* srvDesc, D3D12_CPU_DESCRIPTOR_HANDLE& outCpu, D3D12_GPU_DESCRIPTOR_HANDLE& outGpu)
+{
+	if (!m_pCbvSrvUavDescriptorHeap)
+	{
+		Utils::DebugError("CBV_SRV_UAV heap missing when creating SRV");
+		return;
+	}
+
+
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_pCbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	cpuHandle.ptr += (size_t)m_cbvSrvUavDescriptorSize * m_nextCbvSrvUavIndex;
+
+
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = m_pCbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	gpuHandle.ptr += (size_t)m_cbvSrvUavDescriptorSize * m_nextCbvSrvUavIndex;
+
+
+	m_pDevice->CreateShaderResourceView(resource, srvDesc, cpuHandle);
+
+
+	outCpu = cpuHandle;
+	outGpu = gpuHandle;
+
+
+	m_nextCbvSrvUavIndex++;
+}
+
 IDXGIFactory2* RenderResources::GetDXGIFactory()
 {
 	return m_pFactory;
@@ -330,22 +340,19 @@ D3D12_VIEWPORT RenderResources::GetViewport()
 	return m_screenViewport;
 }
 
-ID3D12Resource* RenderResources::GetCurrentRenderTarget()
+RenderTarget* RenderResources::GetCurrentRenderTarget()
 {
-	return m_pRenderTargets[m_frameIndex];
+	return m_renderTargets[m_frameIndex];
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetCurrentRTV()
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuDescHandle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
-	cpuDescHandle.ptr += (size_t)m_rtvDescriptorSize * m_frameIndex;
-
-	return cpuDescHandle;
+	return m_renderTargets[m_frameIndex]->GetRTV();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetCurrentDSV()
 {
-	return m_pDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	return m_renderTargets[m_frameIndex]->HasDepth() ? m_renderTargets[m_frameIndex]->GetDSV() : D3D12_CPU_DESCRIPTOR_HANDLE{};
 }
 
 ID3D12DescriptorHeap* RenderResources::GetCbvSrvUavDescriptorHeap()
@@ -477,23 +484,20 @@ void RenderResources::CreateDescriptorHeap(ID3D12Device* pDevice)
 	Utils::DebugError("Error while creating the RTV descriptor heap !");
 }
 
-void RenderResources::CreateRenderTargets(ID3D12Device* pDevice)
+void RenderResources::CreateRenderTargets(UINT width, UINT height)
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
+	for (auto rt : m_renderTargets)
+		delete rt;
 
-	for (uint32 n = 0; n < FrameCount; n++)
+	m_renderTargets.clear();
+
+	for (UINT i = 0; i < FrameCount; ++i)
 	{
-		if (SUCCEEDED(m_pSwapChain->GetBuffer(n, IID_PPV_ARGS(&m_pRenderTargets[n]))))
-		{
-			pDevice->CreateRenderTargetView(m_pRenderTargets[n], nullptr, rtvHandle);
-			rtvHandle.ptr += m_rtvDescriptorSize;
-		}
-		else
-		{
-			Utils::DebugError("Error while creating render target number: ", n);
-		}
+		RenderTarget* rt = new RenderTarget(this, width, height);
+		m_renderTargets.push_back(rt);
 	}
 
+	m_frameIndex = 0;
 }
 
 void RenderResources::CreateCommandAllocator(ID3D12Device* pDevice)
@@ -722,52 +726,4 @@ void RenderResources::UpdateViewport(uint32 width, uint32 height)
 {
 	m_screenViewport = { 0.0f, 0.0f, static_cast<float32>(width), static_cast<float32>(height), 0.0f, 1.0f };
 	m_scissorRect = { 0, 0, static_cast<uint16>(width), static_cast<uint16>(height) };
-}
-
-void RenderResources::CreateDepthStencilResources(UINT width, UINT height)
-{
-	D3D12_RESOURCE_DESC depthStencilDesc = {};
-	depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	depthStencilDesc.Alignment = 0;
-	depthStencilDesc.Width = width;
-	depthStencilDesc.Height = height;
-	depthStencilDesc.DepthOrArraySize = 1;
-	depthStencilDesc.MipLevels = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	depthStencilDesc.SampleDesc.Count = 1;
-	depthStencilDesc.SampleDesc.Quality = 0;
-	depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-	D3D12_CLEAR_VALUE clearValue = {};
-	clearValue.Format = DXGI_FORMAT_D32_FLOAT;
-	clearValue.DepthStencil.Depth = 1.0f;
-	clearValue.DepthStencil.Stencil = 0;
-
-	D3D12_HEAP_PROPERTIES heapProps = {};
-	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
-	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	heapProps.CreationNodeMask = 1;
-	heapProps.VisibleNodeMask = 1;
-
-	if (m_pDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &depthStencilDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue, IID_PPV_ARGS(&m_pDepthStencil)) != S_OK)
-	{
-		Utils::DebugLog("[RENDER]: Failed to create DepthStencil buffer.\n");
-	}
-
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-	dsvHeapDesc.NumDescriptors = 1;
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	if (!m_pDsvDescriptorHeap)
-	{
-		if (m_pDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_pDsvDescriptorHeap)) != S_OK)
-		{
-			Utils::DebugLog("[RENDER]: Failed to create DSV Heap.\n");
-		}
-	}
-
-	m_pDevice->CreateDepthStencilView(m_pDepthStencil, nullptr, m_pDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 }

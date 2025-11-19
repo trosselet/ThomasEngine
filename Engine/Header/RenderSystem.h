@@ -6,6 +6,7 @@
 #include <Engine/Header/GameManager.h>
 
 class GraphicEngine;
+class RenderTarget;
 class MeshRenderer;
 
 class RenderSystem
@@ -18,6 +19,9 @@ public:
 private:
 	std::array<std::vector<MeshRenderer const*>, 16> m_meshRenderers{};
 	GraphicEngine* m_pGraphic;
+
+	RenderTarget* m_mainCameraRT = nullptr;
+	RenderTarget* m_otherCameraRT = nullptr;
 
 	friend class Scene;
 	friend class GameManager;

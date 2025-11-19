@@ -22,6 +22,14 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     Camera& cameraComponent = pMainCamera->AddComponent<Camera>();
     pMainCamera->SetName("Camera");
     pMainCamera->AddScript<CameraMovement>();
+    
+    GameObject* const pSecondCamera = new GameObject(scene);
+    pSecondCamera->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    Camera& secondCameraComponent = pSecondCamera->AddComponent<Camera>();
+    MeshRenderer& pCameraMeshRenderer = pSecondCamera->AddComponent<MeshRenderer>();
+    pCameraMeshRenderer.SetSphere(Color::White);
+    pSecondCamera->SetName("Camera2");
+    //pSecondCamera->AddScript<CameraMovement>();
 
     GameObject* const pRectangle = new GameObject(scene);
     pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
@@ -54,12 +62,12 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pSkyMeshRendererTest.SetSphere("sky.dds", Color::White);
     pSky->SetName("Sky");
 
-    GameObject* const pObj = new GameObject(scene);
+    /*GameObject* const pObj = new GameObject(scene);
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pObj->transform.SetScaling(Vector3{ 0.0009f, 0.0009f, 0.0009f });
     MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
     pObjMeshRendererTest.SetMeshFile("Bus.obj", "Bus.dds");
-    pObj->SetName("Obj");
+    pObj->SetName("Obj");*/
 
     /*GameObject* const pObj1 = new GameObject(scene);
     pObj1->transform.SetPosition({ 5.0f, 0.0f, 0.0f });

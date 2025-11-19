@@ -149,7 +149,10 @@ inline Camera& GameObject::AddComponent<Camera>()
 	m_pScene->m_cameras.push_back(pCamera);
 	pCamera->m_pOwner = this;
 	m_pScene->m_camerasToCreate.push_back(pCamera);
-	if (m_pScene->m_pMainCamera == nullptr) m_pScene->m_pMainCamera = pCamera->m_pOwner;
+	if (m_pScene->m_pMainCamera == nullptr) 
+	{
+		m_pScene->m_pMainCamera = pCamera->m_pOwner;
+	}
 
 	m_components[Camera::Tag] = pCamera;
 	m_componentBitmask |= 1 << (Camera::Tag - 1);

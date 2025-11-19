@@ -6,6 +6,7 @@
 
 class Window;
 class RenderResources;
+class RenderTarget;
 
 class Mesh;
 class Material;
@@ -14,16 +15,18 @@ class Material;
 
 struct CameraCB;
 
-
 class Render
 {
 public:
 	Render(const Window* pWindow);
 	~Render();
 
-	void Clear();
+	void Clear(RenderTarget* target);
 	void Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix);
 	void Display();
+
+	void BeginRenderTarget(RenderTarget* pRT);
+	void EndRenderTarget(RenderTarget* pRT);
 
 	RenderResources* GetRenderResources();
 
