@@ -44,6 +44,7 @@ public:
 	std::vector<RenderTarget*> GetRenderTargets() const;
 	RenderTarget* GetMainRenderTarget() const;
 	Render* GetRender();
+    void RecreateOffscreenRT(uint32 width, uint32 height);
 
 public:
 	std::vector<Mesh*> m_pendingMeshUploads;
@@ -54,6 +55,7 @@ public:
 
 private:
 	Render* m_pRender = nullptr;
+    RenderTarget* m_pOffscreenRT = nullptr;
 };
 
 #endif // !GRAPHIC_ENGINE_INCLUDE__H

@@ -26,7 +26,7 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 
 	D3D12_CLEAR_VALUE clearValue = {};
 	clearValue.Format = format;
-	clearValue.Color[0] = 1.0f;
+	clearValue.Color[0] = 0.0f;
 	clearValue.Color[1] = 0.0f;
 	clearValue.Color[2] = 0.0f;
 	clearValue.Color[3] = 1.0f;
@@ -51,7 +51,35 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 		assert(m_pColor != nullptr);
 	}
 
-	//m_rtvCpu = m_pResources->CreateRTV(m_pColor);
+    // allocate RTV descriptor from pool
+    m_rtvIndex = m_pResources->AllocateRTV();
+    if (m_rtvIndex != UINT_MAX)
+    {
+        m_rtvCpu = m_pResources->GetRTVHandle(m_rtvIndex);
+        m_pResources->GetDevice()->CreateRenderTargetView(m_pColor, nullptr, m_rtvCpu);
+    }
+
+	// create SRV in the global CBV/SRV/UAV heap
+	{
+		ID3D12DescriptorHeap* heap = m_pResources->GetCbvSrvUavDescriptorHeap();
+		UINT increment = m_pResources->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		UINT srvIndex = m_pResources->AllocateSRVHeapIndex();
+
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = heap->GetCPUDescriptorHandleForHeapStart();
+		cpuHandle.ptr += (size_t)srvIndex * increment;
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = heap->GetGPUDescriptorHandleForHeapStart();
+		gpuHandle.ptr += (size_t)srvIndex * increment;
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = m_format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Texture2D.MipLevels = 1;
+
+		m_pResources->GetDevice()->CreateShaderResourceView(m_pColor, &srvDesc, cpuHandle);
+		m_srvCpu = cpuHandle;
+		m_srvGpu = gpuHandle;
+	}
 
 	if (m_hasDepth)
 	{
@@ -92,8 +120,14 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 			assert(m_pDepth != nullptr);
 		}
 
-
-		//m_dsvCpu = m_pResources->CreateDSV(m_pDepth);
+        {
+            m_dsvIndex = m_pResources->AllocateDSV();
+            if (m_dsvIndex != UINT_MAX)
+            {
+                m_dsvCpu = m_pResources->GetDSVHandle(m_dsvIndex);
+                m_pResources->GetDevice()->CreateDepthStencilView(m_pDepth, nullptr, m_dsvCpu);
+            }
+        }
 	}
 
 	m_viewport = { 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f };
@@ -112,7 +146,17 @@ RenderTarget::~RenderTarget()
 	{
 		m_pDepth->Release();
 		m_pDepth = nullptr;
+        if (m_dsvIndex != UINT_MAX)
+        {
+            m_pResources->FreeDSV(m_dsvIndex);
+            m_dsvIndex = UINT_MAX;
+        }
 	}
+    if (m_rtvIndex != UINT_MAX)
+    {
+        m_pResources->FreeRTV(m_rtvIndex);
+        m_rtvIndex = UINT_MAX;
+    }
 }
 
 void RenderTarget::Transition(ID3D12GraphicsCommandList* cmdList, D3D12_RESOURCE_STATES newState)

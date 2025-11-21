@@ -2,6 +2,7 @@
 
 #include <Render/Header/Render.h>
 #include <Render/Header/RenderResources.h>
+#include <Render/Header/RenderTarget.h>
 #include <Render/Header/Window.h>
 
 #include <Render/Header/Mesh.h>
@@ -33,36 +34,56 @@ Render::~Render()
 
 void Render::Clear()
 {
-	if (!m_pRenderResources->ResetCommandList())
-		return;
+    if (!m_pRenderResources->ResetCommandList())
+        return;
 
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
-	barrier.Transition.Subresource = 0;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    ID3D12GraphicsCommandList* cmdList = m_pRenderResources->GetCommandList();
+    const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-	m_pRenderResources->GetCommandList()->ResourceBarrier(1, &barrier);
+    if (m_pOffscreenRT)
+    {
+        m_pOffscreenRT->Transition(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        D3D12_VIEWPORT viewport = m_pOffscreenRT->GetViewport();
+        D3D12_RECT rect = m_pOffscreenRT->GetScissor();
+        cmdList->RSSetViewports(1, &viewport);
+        cmdList->RSSetScissorRects(1, &rect);
 
-	D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
-	D3D12_RECT rect = m_pRenderResources->GetRect();
-	m_pRenderResources->GetCommandList()->RSSetViewports(1, &viewport);
-	m_pRenderResources->GetCommandList()->RSSetScissorRects(1, &rect);
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pOffscreenRT->GetRTV();
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_pOffscreenRT->GetDSV();
+        cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, (m_pOffscreenRT->HasDepth() ? &dsvHandle : nullptr));
+        cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
-	const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        if (m_pOffscreenRT->HasDepth())
+            cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 1, &rect);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRenderResources->GetCurrentRTV();
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_pRenderResources->GetCurrentDSV();
+        ID3D12DescriptorHeap* descHeap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
+        cmdList->SetDescriptorHeaps(1, &descHeap);
+    }
+    else
+    {
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
+        barrier.Transition.Subresource = 0;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        cmdList->ResourceBarrier(1, &barrier);
 
-	m_pRenderResources->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+        D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
+        D3D12_RECT rect = m_pRenderResources->GetRect();
+        cmdList->RSSetViewports(1, &viewport);
+        cmdList->RSSetScissorRects(1, &rect);
 
-	m_pRenderResources->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	m_pRenderResources->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 1, &rect);
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRenderResources->GetCurrentRTV();
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_pRenderResources->GetCurrentDSV();
+        cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+        cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+        cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 1, &rect);
 
-	ID3D12DescriptorHeap* descHeap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
-	m_pRenderResources->GetCommandList()->SetDescriptorHeaps(1, &descHeap);
+        ID3D12DescriptorHeap* descHeap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
+        cmdList->SetDescriptorHeaps(1, &descHeap);
+    }
 }
 
 void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix)
@@ -95,24 +116,49 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
 
 void Render::Display()
 {
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
-	barrier.Transition.Subresource = 0;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    ID3D12GraphicsCommandList* cmdList = m_pRenderResources->GetCommandList();
 
-	m_pRenderResources->GetCommandList()->ResourceBarrier(1, &barrier);
+    if (m_pOffscreenRT)
+        m_pOffscreenRT->Transition(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	m_pRenderResources->GetCommandList()->Close();
-	m_pRenderResources->ExecuteCommandList();
+    D3D12_CPU_DESCRIPTOR_HANDLE backRtv = m_pRenderResources->GetCurrentRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE backDsv = m_pRenderResources->GetCurrentDSV();
 
-	m_pRenderResources->Present(false);
+    D3D12_RESOURCE_BARRIER backBarrier = {};
+    backBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    backBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    backBarrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
+    backBarrier.Transition.Subresource = 0;
+    backBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    backBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    cmdList->ResourceBarrier(1, &backBarrier);
 
-	m_pRenderResources->WaitForGpu();
+    cmdList->OMSetRenderTargets(1, &backRtv, FALSE, &backDsv);
 
-	return;
+    D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
+    D3D12_RECT rect = m_pRenderResources->GetRect();
+    cmdList->RSSetViewports(1, &viewport);
+    cmdList->RSSetScissorRects(1, &rect);
+
+    if (m_pOffscreenRT)
+    {
+        ID3D12DescriptorHeap* heaps[] = { m_pRenderResources->GetCbvSrvUavDescriptorHeap() };
+        cmdList->SetDescriptorHeaps(_countof(heaps), heaps);
+        cmdList->SetPipelineState(m_pRenderResources->GetPostProcessPSO());
+        cmdList->SetGraphicsRootSignature(m_pRenderResources->GetPostProcessRootSignature());
+        cmdList->SetGraphicsRootDescriptorTable(0, m_pOffscreenRT->GetSRV());
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        cmdList->DrawInstanced(3, 1, 0, 0);
+    }
+
+    backBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    backBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    cmdList->ResourceBarrier(1, &backBarrier);
+
+    cmdList->Close();
+    m_pRenderResources->ExecuteCommandList();
+    m_pRenderResources->Present(false);
+    m_pRenderResources->WaitForGpu();
 }
 
 RenderResources* Render::GetRenderResources()

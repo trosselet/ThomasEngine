@@ -1,6 +1,8 @@
 #ifndef DXGI_RESOURCES__H
 #define DXGI_RESOURCES__H
 
+#include <vector>
+
 struct IDXGIFactory2;
 struct IDXGIAdapter;
 struct ID3D12Device;
@@ -37,7 +39,9 @@ public:
 	ID3D12DescriptorHeap* GetCbvSrvUavDescriptorHeap();
 
 	ID3D12PipelineState* GetPSO();
+	ID3D12PipelineState* GetPostProcessPSO();
 	ID3D12RootSignature* GetRootSignature();
+	ID3D12RootSignature* GetPostProcessRootSignature();
 
 
 	void WaitForGpu();
@@ -74,6 +78,8 @@ private:
 	ID3DBlob* CompileShader(const std::wstring& path, const char* target);
 	void CreatePipelineState(ID3D12Device* pDevice, const std::wstring& shaderPath);
 	void CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllocator* pcmdAllocator, ID3D12PipelineState* pPso);
+	void CreatePostProcessPSO(ID3D12Device* pDevice, const std::wstring& shaderPath);
+	void CreatePostProcessRootSignature(ID3D12Device* pDevice);
 	void CreateCbvSrvUavDescriptorHeap();
 	void CreateFence(ID3D12Device* pDevice);
 	void UpdateViewport(uint32 width, uint32 height);
@@ -96,10 +102,34 @@ private:
 	ID3D12DescriptorHeap* m_pRtvHeap = nullptr;
 	ID3D12DescriptorHeap* m_pCbvSrvUavDescriptorHeap = nullptr;
 	ID3D12PipelineState* m_pPipelineState = nullptr;
+	ID3D12PipelineState* m_pPostProcessPSO = nullptr;
+	ID3D12RootSignature* m_pPostProcessRootSignature = nullptr;
 	ID3D12GraphicsCommandList* m_pCommandList = nullptr;
 	ID3D12DescriptorHeap* m_pDsvDescriptorHeap = nullptr;
 	ID3D12Resource* m_pDepthStencil = nullptr;
 	UINT m_rtvDescriptorSize;
+
+private:
+private:
+    // Descriptor pool heaps for RTV/DSV allocations
+    ID3D12DescriptorHeap* m_pRtvPoolHeap = nullptr;
+    ID3D12DescriptorHeap* m_pDsvPoolHeap = nullptr;
+    UINT m_rtvPoolDescriptorSize = 0;
+    UINT m_dsvPoolDescriptorSize = 0;
+    static const UINT RTV_POOL_SIZE = 256;
+    static const UINT DSV_POOL_SIZE = 64;
+    std::vector<char> m_rtvPoolUsed;
+    std::vector<char> m_dsvPoolUsed;
+
+public:
+    // RTV/DSV pool allocator
+    UINT AllocateRTV();
+    void FreeRTV(UINT index);
+    D3D12_CPU_DESCRIPTOR_HANDLE GetRTVHandle(UINT index);
+
+    UINT AllocateDSV();
+    void FreeDSV(UINT index);
+    D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle(UINT index);
 
 private:
 	uint32 m_srvHeapIndex = 0;

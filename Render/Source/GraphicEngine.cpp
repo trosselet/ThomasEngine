@@ -20,6 +20,9 @@
 GraphicEngine::GraphicEngine(const Window* pWindow)
 {
 	m_pRender = new Render(pWindow);
+    // create a simple offscreen render target for post processing tests
+    m_pOffscreenRT = new RenderTarget(m_pRender->GetRenderResources(), pWindow->GetWidth(), pWindow->GetHeight());
+    m_pRender->SetOffscreenRenderTarget(m_pOffscreenRT);
 	PrimitiveGeometry::InitializeGeometry();
 }
 
@@ -31,6 +34,12 @@ GraphicEngine::~GraphicEngine()
 	m_meshCache.Release();
 
 	delete m_pRender;
+
+    if (m_pOffscreenRT)
+    {
+        delete m_pOffscreenRT;
+        m_pOffscreenRT = nullptr;
+    }
 }
 
 void GraphicEngine::BeginDraw()
@@ -174,4 +183,20 @@ void GraphicEngine::ProcessPendingUploads()
 Render* GraphicEngine::GetRender()
 {
 	return m_pRender;
+}
+
+void GraphicEngine::RecreateOffscreenRT(uint32 width, uint32 height)
+{
+    // choose reduced resolution (half size) for postprocess target
+    uint32 rtW = std::max<uint32>(1, width / 2);
+    uint32 rtH = std::max<uint32>(1, height / 2);
+
+    if (m_pOffscreenRT)
+    {
+        delete m_pOffscreenRT;
+        m_pOffscreenRT = nullptr;
+    }
+
+    m_pOffscreenRT = new RenderTarget(m_pRender->GetRenderResources(), rtW, rtH);
+    m_pRender->SetOffscreenRenderTarget(m_pOffscreenRT);
 }

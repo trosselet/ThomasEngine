@@ -4,10 +4,12 @@
 #if _EXE
 
 #define SHADER_PATH L"shaders/shader.hlsl"
+#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
 
 #else
 
 #define SHADER_PATH L"shaders/shader.hlsl"
+#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
 
 #endif
 
@@ -27,7 +29,62 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateCommandAllocator(m_pDevice);
 
 	CreatePipelineState(m_pDevice, SHADER_PATH);
+	CreatePostProcessPSO(m_pDevice, SHADER_PP_PATH);
 	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
+}
+
+UINT RenderResources::AllocateRTV()
+{
+    for (UINT i = 0; i < RTV_POOL_SIZE; ++i)
+    {
+        if (!m_rtvPoolUsed[i])
+        {
+            m_rtvPoolUsed[i] = 1;
+            return i;
+        }
+    }
+    return UINT_MAX; // no free
+}
+
+void RenderResources::FreeRTV(UINT index)
+{
+    if (index < RTV_POOL_SIZE) m_rtvPoolUsed[index] = 0;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetRTVHandle(UINT index)
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE handle = {};
+    if (!m_pRtvPoolHeap) return handle;
+    handle = m_pRtvPoolHeap->GetCPUDescriptorHandleForHeapStart();
+    handle.ptr += (size_t)index * m_rtvPoolDescriptorSize;
+    return handle;
+}
+
+UINT RenderResources::AllocateDSV()
+{
+    for (UINT i = 0; i < DSV_POOL_SIZE; ++i)
+    {
+        if (!m_dsvPoolUsed[i])
+        {
+            m_dsvPoolUsed[i] = 1;
+            return i;
+        }
+    }
+    return UINT_MAX;
+}
+
+void RenderResources::FreeDSV(UINT index)
+{
+    if (index < DSV_POOL_SIZE) m_dsvPoolUsed[index] = 0;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetDSVHandle(UINT index)
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE handle = {};
+    if (!m_pDsvPoolHeap) return handle;
+    handle = m_pDsvPoolHeap->GetCPUDescriptorHandleForHeapStart();
+    handle.ptr += (size_t)index * m_dsvPoolDescriptorSize;
+    return handle;
 }
 
 RenderResources::~RenderResources()
@@ -47,6 +104,12 @@ RenderResources::~RenderResources()
 
 	if (m_pDepthStencil) { m_pDepthStencil->Release(); m_pDepthStencil = nullptr; }
 	if (m_pDsvDescriptorHeap) { m_pDsvDescriptorHeap->Release(); m_pDsvDescriptorHeap = nullptr; }
+
+    // release RTV/DSV pool heaps
+    if (m_pRtvPoolHeap) { m_pRtvPoolHeap->Release(); m_pRtvPoolHeap = nullptr; }
+    if (m_pDsvPoolHeap) { m_pDsvPoolHeap->Release(); m_pDsvPoolHeap = nullptr; }
+    m_rtvPoolUsed.clear();
+    m_dsvPoolUsed.clear();
 	if (m_pCbvSrvUavDescriptorHeap) { m_pCbvSrvUavDescriptorHeap->Release(); m_pCbvSrvUavDescriptorHeap = nullptr; }
 	if (m_pRtvHeap) { m_pRtvHeap->Release(); m_pRtvHeap = nullptr; }
 	if (m_pSwapChain) { m_pSwapChain->Release(); m_pSwapChain = nullptr; }
@@ -348,6 +411,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetCurrentDSV()
 	return m_pDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
+
+
+
 ID3D12DescriptorHeap* RenderResources::GetCbvSrvUavDescriptorHeap()
 {
 	return m_pCbvSrvUavDescriptorHeap;
@@ -361,6 +427,11 @@ ID3D12PipelineState* RenderResources::GetPSO()
 ID3D12RootSignature* RenderResources::GetRootSignature()
 {
 	return m_pRootSignature;
+}
+
+ID3D12RootSignature* RenderResources::GetPostProcessRootSignature()
+{
+	return m_pPostProcessRootSignature;
 }
 
 void RenderResources::CreateDXGIFactory()
@@ -468,15 +539,36 @@ void RenderResources::CreateDescriptorHeap(ID3D12Device* pDevice)
 	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	desc.NumDescriptors = FrameCount;
 	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    if (SUCCEEDED(pDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_pRtvHeap))))
+    {
+        Utils::DebugLog("RTV descriptor heap has been created !");
+    }
+    else
+    {
+        Utils::DebugError("Error while creating the RTV descriptor heap !");
+    }
 
-	if (SUCCEEDED(pDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_pRtvHeap))))
-	{
-		Utils::DebugLog("RTV descriptor heap has been created !");
-		return;
-	}
-	Utils::DebugError("Error while creating the RTV descriptor heap !");
+    // create pool heaps for dynamic RTV/DSV descriptors
+    D3D12_DESCRIPTOR_HEAP_DESC rtvPoolDesc = {};
+    rtvPoolDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    rtvPoolDesc.NumDescriptors = RTV_POOL_SIZE;
+    rtvPoolDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    if (SUCCEEDED(m_pDevice->CreateDescriptorHeap(&rtvPoolDesc, IID_PPV_ARGS(&m_pRtvPoolHeap))))
+    {
+        m_rtvPoolDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        m_rtvPoolUsed.assign(RTV_POOL_SIZE, 0);
+    }
+
+    D3D12_DESCRIPTOR_HEAP_DESC dsvPoolDesc = {};
+    dsvPoolDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    dsvPoolDesc.NumDescriptors = DSV_POOL_SIZE;
+    dsvPoolDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    if (SUCCEEDED(m_pDevice->CreateDescriptorHeap(&dsvPoolDesc, IID_PPV_ARGS(&m_pDsvPoolHeap))))
+    {
+        m_dsvPoolDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+        m_dsvPoolUsed.assign(DSV_POOL_SIZE, 0);
+    }
 }
-
 void RenderResources::CreateRenderTargets(ID3D12Device* pDevice)
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
@@ -692,6 +784,158 @@ void RenderResources::CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllo
 		Utils::DebugLog("CommandList successfuly created !");
 		return;
 	}
+}
+
+void RenderResources::CreatePostProcessPSO(ID3D12Device* pDevice, const std::wstring& shaderPath)
+{
+    if (!pDevice) return;
+
+    ID3DBlob* vsBlob = CompileShader(shaderPath, "vs_5_0");
+    ID3DBlob* psBlob = CompileShader(shaderPath, "ps_5_0");
+
+    if (!vsBlob || !psBlob) return;
+
+	CreatePostProcessRootSignature(pDevice);
+
+    // Use existing root signature
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.pRootSignature = m_pPostProcessRootSignature;
+    psoDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
+    psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
+
+    // Fullscreen post process needs minimal IA
+    psoDesc.InputLayout = { nullptr, 0 };
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+
+    // Rasterizer
+    psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    psoDesc.RasterizerState.DepthClipEnable = FALSE;
+
+    // No depth
+    D3D12_DEPTH_STENCIL_DESC depthDesc = {};
+    depthDesc.DepthEnable = FALSE;
+    depthDesc.StencilEnable = FALSE;
+    psoDesc.DepthStencilState = depthDesc;
+    psoDesc.SampleMask = UINT_MAX;
+
+    // Single RTV, same format as swap chain
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.SampleDesc.Count = 1;
+
+    // Blend default
+    psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+    psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+    if (FAILED(pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPostProcessPSO))))
+    {
+        Utils::DebugError("Failed to create post process PSO");
+    }
+
+    if (vsBlob) vsBlob->Release();
+    if (psBlob) psBlob->Release();
+}
+
+void RenderResources::CreatePostProcessRootSignature(ID3D12Device* pDevice)
+{
+	////////////////////////////////
+	// Root parameter : SRV (t0)  //
+	////////////////////////////////
+
+	D3D12_ROOT_PARAMETER rootParameters[1] = {};
+
+	// Descriptor range for t0
+	D3D12_DESCRIPTOR_RANGE srvRange = {};
+	srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	srvRange.NumDescriptors = 1;
+	srvRange.BaseShaderRegister = 0; // t0
+	srvRange.RegisterSpace = 0;
+	srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+	rootParameters[0].DescriptorTable.pDescriptorRanges = &srvRange;
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+
+	/////////////////////////////////
+	// Static sampler for sampling //
+	/////////////////////////////////
+
+	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+	samplerDesc.MinLOD = 0.0f;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc.ShaderRegister = 0; // s0
+	samplerDesc.RegisterSpace = 0;
+	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerDesc };
+
+
+	/////////////////////////////////
+	//       Root Signature		   //
+	/////////////////////////////////
+
+	D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
+	rootDesc.NumParameters = _countof(rootParameters);
+	rootDesc.pParameters = rootParameters;
+	rootDesc.NumStaticSamplers = _countof(samplers);
+	rootDesc.pStaticSamplers = samplers;
+
+	// Input assembler allowed (even if no InputLayout)
+	rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+
+	//////////////////////////////////////
+	// Serialize + Create the signature //
+	//////////////////////////////////////
+
+	ID3DBlob* signature = nullptr;
+	ID3DBlob* error = nullptr;
+
+	HRESULT hr = D3D12SerializeRootSignature(
+		&rootDesc,
+		D3D_ROOT_SIGNATURE_VERSION_1,
+		&signature,
+		&error
+	);
+
+	if (FAILED(hr))
+	{
+		if (error)
+			Utils::DebugError("PostProcess Root Signature Serialize Error: ", (const char*)error->GetBufferPointer());
+	}
+	else
+	{
+		hr = pDevice->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			IID_PPV_ARGS(&m_pPostProcessRootSignature)
+		);
+
+		if (FAILED(hr))
+			Utils::DebugError("Error creating PostProcess Root Signature!");
+		else
+			Utils::DebugLog("PostProcess Root Signature created!");
+	}
+
+	if (signature) signature->Release();
+	if (error) error->Release();
+}
+
+ID3D12PipelineState* RenderResources::GetPostProcessPSO()
+{
+    return m_pPostProcessPSO;
 }
 
 void RenderResources::CreateCbvSrvUavDescriptorHeap()

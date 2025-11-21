@@ -45,6 +45,8 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE m_dsvCpu = {};
     D3D12_CPU_DESCRIPTOR_HANDLE m_srvCpu = {};
     D3D12_GPU_DESCRIPTOR_HANDLE m_srvGpu = {};
+    UINT m_rtvIndex = UINT_MAX;
+    UINT m_dsvIndex = UINT_MAX;
 
 
     uint32_t m_width = 0;
