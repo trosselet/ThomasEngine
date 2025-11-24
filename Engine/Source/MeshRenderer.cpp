@@ -21,7 +21,18 @@ MeshRenderer::~MeshRenderer()
 
 void MeshRenderer::SetRectangle(Color c)
 {
-	SetRectangle("DefaultTex.dds", c);
+	Free();
+
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, c);
+
+
+	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
+	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	m_pMaterial = graphics.CreateMaterial();
+	m_pMaterial->SetTexture(m_pTexture);
+	m_primitive = true;
 }
 
 void MeshRenderer::SetRectangle(const char* texturePath, Color c)

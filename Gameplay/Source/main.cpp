@@ -4,7 +4,6 @@
 
 #include <Gameplay/Header/main.h>
 #include <Gameplay/Header/CameraMovement.h>
-#include <Gameplay/Header/RotateMesh.h>
 
 
 int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow)
@@ -24,24 +23,21 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pMainCamera->SetName("Camera");
     pMainCamera->AddScript<CameraMovement>();
     
-    /*GameObject* const pSecondCamera = new GameObject(scene);
+    GameObject* const pSecondCamera = new GameObject(scene);
     pSecondCamera->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     Camera& secondCameraComponent = pSecondCamera->AddComponent<Camera>();
     MeshRenderer& pCameraMeshRenderer = pSecondCamera->AddComponent<MeshRenderer>();
     pCameraMeshRenderer.SetSphere(Color::White);
-    pSecondCamera->SetName("Camera2");*/
+    pSecondCamera->SetName("Camera2");
     //pSecondCamera->AddScript<CameraMovement>();
 
-    for (int i = 0; i < 1000; i++)
-    {
-        GameObject* const pRectangle = new GameObject(scene);
-        pRectangle->transform.SetPosition({ (float)i + 0.2f, 0.0f, 5.0f });
-        MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();
-        pRectangleMeshRendererTest.SetRectangle(Color::White);
-        pRectangle->SetName("Rectangle1");
-    }
+    GameObject* const pRectangle = new GameObject(scene);
+    pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
+    MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();
+    pRectangleMeshRendererTest.SetRectangle(Color::White);
+    pRectangle->SetName("Rectangle1");
 
-    /*GameObject* const pSphere1 = new GameObject(scene);
+    GameObject* const pSphere1 = new GameObject(scene);
     pSphere1->transform.SetPosition({ 1.5f, 0.0f, 5.0f });
     MeshRenderer& pSphere1MeshRendererTest = pSphere1->AddComponent<MeshRenderer>();
     pSphere1MeshRendererTest.SetSphere(Color::White);
@@ -57,7 +53,6 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
     MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
     pCube1MeshRendererTest.SetCube("wood.dds", Color::White);
-    pCube1->AddScript<RotateMesh>();
     pCube1->SetName("Cube");
 
     GameObject* const pSky = new GameObject(scene);
@@ -65,7 +60,7 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pSky->transform.SetScaling(Vector3{ -10000.0f, -10000.0f, -10000.0f });
     MeshRenderer& pSkyMeshRendererTest = pSky->AddComponent<MeshRenderer>();
     pSkyMeshRendererTest.SetSphere("sky.dds", Color::White);
-    pSky->SetName("Sky");*/
+    pSky->SetName("Sky");
 
     /*GameObject* const pObj = new GameObject(scene);
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
