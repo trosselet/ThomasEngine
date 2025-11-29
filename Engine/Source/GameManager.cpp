@@ -29,6 +29,13 @@ GameManager::~GameManager()
 	delete m_pScriptSystem;
 	m_pScriptSystem = nullptr;
 
+	m_renderThreadRunning = false;
+	if (m_renderThread.joinable())
+	{
+		m_renderThread.join();
+	}
+
+
 	delete m_pRenderSystem;
 	m_pRenderSystem = nullptr;
 
@@ -96,7 +103,6 @@ ScriptSystem& GameManager::GetScriptSystem()
 
 void GameManager::GameLoop()
 {
-
 	while (m_pWindow->IsOpen())
 	{
 		auto now = std::chrono::steady_clock::now();
@@ -162,12 +168,10 @@ void GameManager::GameLoop()
 		// Rendering //
 		///////////////
 
-		float renderStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
-		m_pRenderSystem->Rendering();
-		float renderEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
-		printf("\033[%d;%dH\033[2K  [ENGINE] Rendering time: %f", 7, 0, renderEndTime - renderStartTime);
-
-		printf("\033[%d;%dH\033[2K  [ENGINE] Scene object number: %d", 8, 0, (int)GetActiveScene().GetGameObjects().size());
+		if (!m_renderThread.joinable())
+		{
+			m_renderThread = std::thread(&GameManager::RenderThreadFunc, this);
+		}
 
 	}
 }
@@ -226,5 +230,27 @@ void GameManager::HandleDeletions()
 		scene.m_loaded = false;
 		scene.m_gameObjects.clear();
 		m_loadedScenes.erase(m_loadedScenes.begin() + i--);
+	}
+}
+
+void GameManager::RenderThreadFunc()
+{
+	m_renderThreadRunning = true;
+
+	while (m_pWindow->IsOpen() && m_renderThreadRunning)
+	{
+		auto startTime = std::chrono::steady_clock::now();
+
+		m_pRenderSystem->Rendering();
+
+		float renderEndTime = static_cast<float>(
+			std::chrono::duration_cast<std::chrono::microseconds>(
+				std::chrono::steady_clock::now() - startTime
+			).count()) / 1'000'000.0f;
+
+		printf("\033[%d;%dH\033[2K  [ENGINE] Rendering time: %f", 7, 0, renderEndTime);
+		printf("\033[%d;%dH\033[2K  [ENGINE] Scene object number: %d", 8, 0, (int)GetActiveScene().GetGameObjects().size());
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }

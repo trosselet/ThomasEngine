@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <Tools/Header/PrimitiveTypes.h>
 #include <chrono>
+#include <thread>
 
 class Window;
 class RenderSystem;
@@ -42,6 +43,8 @@ private:
 	void HandleCreations();
 	void HandleDeletions();
 
+	void RenderThreadFunc();
+
 private:
 	inline static GameManager* m_pInstance = nullptr;
 
@@ -62,6 +65,10 @@ private:
 	float32 m_deltaTime = 0.0f;
 	float32 m_accumulator = 0.0f;
 	std::chrono::steady_clock::time_point m_lastTime;
+
+	std::thread m_renderThread;
+	std::atomic<bool> m_renderThreadRunning = false;
+
 
 	friend class GameObject;
 	friend class Scene;
