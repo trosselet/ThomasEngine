@@ -136,6 +136,19 @@ void Mesh::UploadGeometry(bool deferred)
 
 void Mesh::UploadBuffers(float32* vertices, UINT vertexCount, uint32* indices, UINT indexCount, UINT floatStride)
 {
+
+    if (m_pVertexBufferGPU)
+    {
+        m_pVertexBufferGPU->Release();
+        m_pVertexBufferGPU = nullptr;
+    }
+
+    if (m_pIndexBufferGPU)
+    {
+        m_pIndexBufferGPU->Release();
+        m_pIndexBufferGPU = nullptr;
+    }
+
     m_vertexCount = vertexCount;
     m_indexCount = indexCount;
 
@@ -209,4 +222,20 @@ void Mesh::UploadBuffersDeferred(ID3D12GraphicsCommandList* commandList)
 
     m_pendingVertices.clear();
     m_pendingIndices.clear();
+}
+
+void Mesh::UpdateColors()
+{
+    RenderResources* rr = m_pRender->GetRenderResources();
+
+    rr->ResetCommandList();
+
+    UploadGeometry(false);
+
+    rr->GetCommandList()->Close();
+    rr->ExecuteCommandList();
+    rr->ExecuteCommandList();
+    rr->FlushQueue();
+
+    ReleaseUploadBuffers();
 }

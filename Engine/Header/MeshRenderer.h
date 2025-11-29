@@ -34,6 +34,8 @@ public:
 
 	void SetMeshFileInternal(const char* objPath, const char* texturePath);
 
+	void SetColor(Color c);
+
 	Geometry* GetGeometry();
 	Mesh* GetMesh();
 	Material* GetMaterial();

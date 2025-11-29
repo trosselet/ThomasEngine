@@ -26,6 +26,7 @@ struct VSOutput
     float4 pos : SV_POSITION;
     float4 color : COLOR;
     float2 texcoord : TEXCOORD;
+    float3 normal : NORMAL;
 };
 
 VSOutput vsmain(VSInput vin)
@@ -34,6 +35,7 @@ VSOutput vsmain(VSInput vin)
     vout.pos = mul(mul(mul(float4(vin.pos, 1.0f), gWorld), gView), gProj);
     vout.color = vin.color;
     vout.texcoord = vin.uv;
+    vout.normal = vin.normal;
     
     return vout;
 }
@@ -42,4 +44,5 @@ VSOutput vsmain(VSInput vin)
 float4 psmain(VSOutput input) : SV_TARGET
 {
     return gTexture.Sample(gSampler, input.texcoord) * input.color;
+
 }

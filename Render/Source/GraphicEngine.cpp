@@ -106,6 +106,23 @@ Texture* GraphicEngine::CreateTexture(char const* filePath)
 	return pTexture;
 }
 
+void GraphicEngine::SetColor(Geometry* pGeometry, Color c)
+{
+	if (pGeometry != nullptr)
+	{
+		pGeometry->colors.clear();
+	}
+	else
+	{
+		return;
+	}
+
+	for (int i = 0; i < pGeometry->positions.size(); i++)
+	{
+		pGeometry->colors.push_back(DirectX::XMFLOAT4(c.r, c.g, c.b, c.a));
+	}
+}
+
 void GraphicEngine::UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix)
 {
 	DirectX::XMFLOAT3 d12Position = DirectX::XMFLOAT3(position.ToXMFLOAT3());

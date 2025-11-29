@@ -34,6 +34,8 @@ public:
 	Material* CreateMaterial();
 	Texture* CreateTexture(char const* filePath);
 
+	void SetColor(Geometry* pGeometry, Color c);
+
 	void UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix);
 	void UpdateCameraTo(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix);
 

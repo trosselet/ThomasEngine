@@ -174,6 +174,13 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* textureP
 	m_primitive = true;
 }
 
+void MeshRenderer::SetColor(Color c)
+{
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+	graphics.SetColor(m_pGeometry, c);
+	m_pMesh->UpdateColors();
+}
+
 Geometry* MeshRenderer::GetGeometry()
 {
 	return m_pGeometry;

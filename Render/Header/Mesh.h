@@ -23,6 +23,8 @@ public:
 
     void UploadBuffersDeferred(ID3D12GraphicsCommandList* commandList);
 
+    void UpdateColors();
+
 private:
     void UploadGeometry(bool deferred);
     void UploadBuffers(float32* vertices, UINT vertexCount, uint32* indices, UINT indexCount, UINT floatStride);

@@ -28,6 +28,7 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     Camera& secondCameraComponent = pSecondCamera->AddComponent<Camera>();
     MeshRenderer& pCameraMeshRenderer = pSecondCamera->AddComponent<MeshRenderer>();
     pCameraMeshRenderer.SetSphere(Color::White);
+	pCameraMeshRenderer.SetColor(Color::Red);
     pSecondCamera->SetName("Camera2");
     //pSecondCamera->AddScript<CameraMovement>();
 
@@ -54,12 +55,14 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pCircle1->transform.SetPosition({ 3.0f, 0.0f, 5.0f });
     MeshRenderer& pCircle1MeshRendererTest = pCircle1->AddComponent<MeshRenderer>();
     pCircle1MeshRendererTest.SetCircle(Color::White);
+    pCircle1MeshRendererTest.SetColor(Color::Blue);;
     pCircle1->SetName("Circle1");
    
     GameObject* const pCube1 = new GameObject(scene);
     pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
     MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
     pCube1MeshRendererTest.SetCube("wood.dds", Color::White);
+    pCube1MeshRendererTest.SetColor(Color::Red);
     pCube1->SetName("Cube");
 
     GameObject* const pSky = new GameObject(scene);
