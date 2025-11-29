@@ -753,8 +753,8 @@ void RenderResources::CreatePipelineState(ID3D12Device* pDevice, const std::wstr
 	psoDesc.RasterizerState.ForcedSampleCount = 0;
 	psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-	psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
-	psoDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
+	psoDesc.BlendState.AlphaToCoverageEnable = TRUE;
+	psoDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
 	psoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
 	psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
 	psoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
@@ -800,35 +800,29 @@ void RenderResources::CreatePostProcessPSO(ID3D12Device* pDevice, const std::wst
 
 	CreatePostProcessRootSignature(pDevice);
 
-    // Use existing root signature
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.pRootSignature = m_pPostProcessRootSignature;
     psoDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
     psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
 
-    // Fullscreen post process needs minimal IA
     psoDesc.InputLayout = { nullptr, 0 };
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-    // Rasterizer
     psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
     psoDesc.RasterizerState.DepthClipEnable = FALSE;
 
-    // No depth
     D3D12_DEPTH_STENCIL_DESC depthDesc = {};
     depthDesc.DepthEnable = FALSE;
     depthDesc.StencilEnable = FALSE;
     psoDesc.DepthStencilState = depthDesc;
     psoDesc.SampleMask = UINT_MAX;
 
-    // Single RTV, same format as swap chain
     psoDesc.NumRenderTargets = 1;
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.SampleDesc.Count = 1;
 
-    // Blend default
-    psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+    psoDesc.BlendState.AlphaToCoverageEnable = TRUE;
     psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
     if (FAILED(pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPostProcessPSO))))

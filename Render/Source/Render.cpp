@@ -103,7 +103,9 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
 	D3D12_INDEX_BUFFER_VIEW pIbv = pMesh->GetIndexBuffer();
 	m_pRenderResources->GetCommandList()->IASetIndexBuffer(&pIbv);
 
-	// Pos in the root parameter list of t0
+    //////////////////////////////////////////
+	// Pos in the root parameter list of t0 //
+    //////////////////////////////////////////
 	pMaterial->UpdateTexture(2);
 
 	m_pRenderResources->GetCommandList()->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
