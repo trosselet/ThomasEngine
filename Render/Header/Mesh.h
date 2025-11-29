@@ -23,7 +23,7 @@ public:
 
     void UploadBuffersDeferred(ID3D12GraphicsCommandList* commandList);
 
-    void UpdateColors();
+    void UpdateMesh();
 
 private:
     void UploadGeometry(bool deferred);

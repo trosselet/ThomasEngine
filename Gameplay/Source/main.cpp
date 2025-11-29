@@ -29,8 +29,9 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     MeshRenderer& pCameraMeshRenderer = pSecondCamera->AddComponent<MeshRenderer>();
     pCameraMeshRenderer.SetSphere(Color::White);
 	pCameraMeshRenderer.SetColor(Color::Red);
+	pCameraMeshRenderer.SetTexture("wood.dds");
     pSecondCamera->SetName("Camera2");
-    pSecondCamera->AddScript<CameraMovement>();
+    /*pSecondCamera->AddScript<CameraMovement>();*/
 
     GameObject* const pPlateform = new GameObject(scene);
     pPlateform->transform.SetPosition({ 0.0f, -1.0f, 5.0f });

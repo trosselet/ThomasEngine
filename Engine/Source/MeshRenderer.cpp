@@ -178,7 +178,18 @@ void MeshRenderer::SetColor(Color c)
 {
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 	graphics.SetColor(m_pGeometry, c);
-	m_pMesh->UpdateColors();
+	m_pMesh->UpdateMesh();
+}
+
+void MeshRenderer::SetTexture(const char* texturePath)
+{
+	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
+
+	Texture* pTexture = graphics.CreateTexture(texturePath);
+
+	m_pMaterial->SetTexture(pTexture);
+
+	m_pMesh->UpdateMesh();
 }
 
 Geometry* MeshRenderer::GetGeometry()
@@ -198,17 +209,7 @@ Material* MeshRenderer::GetMaterial()
 
 void MeshRenderer::SetSphere(Color c)
 {
-	Free();
-
-	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
-
-	m_pGeometry = graphics.CreatePrimitiveGeometry(SPHERE, c);
-
-	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
-	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(m_pTexture);
-	m_primitive = true;
+	SetSphere("DefaultTex.dds", c);
 }
 
 void MeshRenderer::SetSphere(const char* texturePath, Color c)
@@ -217,12 +218,32 @@ void MeshRenderer::SetSphere(const char* texturePath, Color c)
 
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreatePrimitiveGeometry(SPHERE, c);
 
-	m_pTexture = graphics.CreateTexture(texturePath);
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	std::string geomKey = "primitive:sphere";
+	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry*
+		{
+			return graphics.CreatePrimitiveGeometry(SPHERE, c);
+		});
+	m_ownsGeometry = false;
+
+
+	std::string texKey = std::string("tex:") + texturePath;
+	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
+		{
+			return graphics.CreateTexture(texturePath);
+		});
+	m_ownsMaterial = false;
+
+	std::string meshKey = geomKey + std::string("_mesh");
+	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]()->Mesh*
+		{
+			return graphics.CreateMeshDeferred(m_pGeometry);
+		});
+	m_ownsMesh = false;
+
 	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(m_pTexture);
+	m_pMaterial->SetTexture(pTexture, m_ownsMaterial);
+
 	m_primitive = true;
 }
 

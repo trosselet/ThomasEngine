@@ -224,7 +224,7 @@ void Mesh::UploadBuffersDeferred(ID3D12GraphicsCommandList* commandList)
     m_pendingIndices.clear();
 }
 
-void Mesh::UpdateColors()
+void Mesh::UpdateMesh()
 {
     RenderResources* rr = m_pRender->GetRenderResources();
 

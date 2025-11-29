@@ -65,11 +65,4 @@ void CameraMovement::OnFixedUpdate()
     mPitch = std::clamp(mPitch, -limit, limit);
 
     t.SetCameraRotation(mYaw, mPitch);
-
-
-    if (M)
-    {
-        if (m_pOwner->GetComponent<MeshRenderer>() != nullptr)
-            m_pOwner->GetComponent<MeshRenderer>()->SetColor(Color::Green);
-    }
 }
