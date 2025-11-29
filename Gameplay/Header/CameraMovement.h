@@ -14,7 +14,7 @@ public:
 	void OnFixedUpdate() override;
 
 private:
-	int cameraSpeed;
+	float cameraSpeed;
 };
 
 

@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <Tools/Header/PrimitiveTypes.h>
+#include <chrono>
 
 class Window;
 class RenderSystem;
@@ -12,7 +13,7 @@ class ScriptSystem;
 class GameManager
 {
 public:
-	
+
 
 	static void Initialize(HINSTANCE hInstance);
 	static void Run();
@@ -23,6 +24,7 @@ public:
 	static std::vector<Scene>& GetScenes();
 	static Scene& GetActiveScene();
 	static float32& GetFixedDeltaTime();
+	static float32& GetDeltaTime();
 
 	static RenderSystem& GetRenderSystem();
 	static ScriptSystem& GetScriptSystem();
@@ -57,6 +59,9 @@ private:
 
 	float32 m_fixedDeltaTime = 0.016f;
 	float32 m_elapsedTime = 0.0f;
+	float32 m_deltaTime = 0.0f;
+	float32 m_accumulator = 0.0f;
+	std::chrono::steady_clock::time_point m_lastTime;
 
 	friend class GameObject;
 	friend class Scene;

@@ -11,7 +11,7 @@ GameManager::GameManager(HINSTANCE hInstance) :
 	m_pRenderSystem(new RenderSystem(m_pWindow->GetGraphicEngine())),
 	m_pScriptSystem(new ScriptSystem())
 {
-	
+	m_lastTime = std::chrono::steady_clock::now();
 }
 
 GameManager::~GameManager()
@@ -19,7 +19,7 @@ GameManager::~GameManager()
 	for (Scene& scene : m_scenes)
 	{
 		scene.Unload();
-		scene.HandleDestruction(); 
+		scene.HandleDestruction();
 	}
 
 	m_scenes.clear();
@@ -79,6 +79,11 @@ float32& GameManager::GetFixedDeltaTime()
 	return m_pInstance->m_fixedDeltaTime;
 }
 
+float32& GameManager::GetDeltaTime()
+{
+	return m_pInstance->m_deltaTime;
+}
+
 RenderSystem& GameManager::GetRenderSystem()
 {
 	return *m_pInstance->m_pRenderSystem;
@@ -94,17 +99,27 @@ void GameManager::GameLoop()
 
 	while (m_pWindow->IsOpen())
 	{
+		auto now = std::chrono::steady_clock::now();
+		std::chrono::duration<float> frameTime = now - m_lastTime;
+		m_lastTime = now;
+
+		m_deltaTime = frameTime.count();
+		m_accumulator += m_deltaTime;
+
 		Update();
 
 		HandleCreations();
 		HandleDeletions();
 
-		FixedUpdate();
+		while (m_accumulator >= m_fixedDeltaTime)
+		{
+			FixedUpdate();
+			m_accumulator -= m_fixedDeltaTime;
+		}
 
 		m_pScriptSystem->OnUpdate();
 
 		m_pRenderSystem->Rendering();
-
 	}
 }
 

@@ -5,7 +5,7 @@
 
 CameraMovement::CameraMovement()
 {
-    cameraSpeed = 10;
+    cameraSpeed = 0.05f;
 }
 
 CameraMovement::~CameraMovement()
@@ -17,6 +17,11 @@ void CameraMovement::OnStart()
 }
 
 void CameraMovement::OnUpdate()
+{
+    
+}
+
+void CameraMovement::OnFixedUpdate()
 {
     bool Z = GetAsyncKeyState('Z') & 0x8000;
     bool Q = GetAsyncKeyState('Q') & 0x8000;
@@ -36,8 +41,8 @@ void CameraMovement::OnUpdate()
     Vector3 r = t.Right();
     Vector3 u = t.Up();
 
-    const float moveSpeed = cameraSpeed * GameManager::GetFixedDeltaTime();
-    const float rotSpeed = 1.5f * GameManager::GetFixedDeltaTime();
+    const float moveSpeed = cameraSpeed;
+    const float rotSpeed = 0.02f;
 
 
     if (Z) t.OffsetPosition((f * moveSpeed).ToXMFLOAT3());
@@ -61,8 +66,4 @@ void CameraMovement::OnUpdate()
 
     if (pitch != 0)
         t.RotatePitch(pitch);
-}
-
-void CameraMovement::OnFixedUpdate()
-{
 }
