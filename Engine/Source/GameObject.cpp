@@ -53,7 +53,10 @@ void GameObject::Destroy()
         pChild->Destroy();
 
     for (auto const& [tag, pComponent] : m_components)
-        pComponent->Destroy();
+    {
+		if (pComponent != nullptr)
+            pComponent->Destroy();
+    }
 
     GameManager::GetActiveScene().m_gameObjectsToDelete.push_back(this);
 }

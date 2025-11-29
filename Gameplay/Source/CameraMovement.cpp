@@ -2,6 +2,7 @@
 #include <Gameplay/Header/CameraMovement.h>
 #include <Engine/Header/IScript.h>
 #include <Engine/Header/GameManager.h>
+#include <Engine/Header/MeshRenderer.h>
 
 constexpr float PIDIV2 = 1.570796327f;
 
@@ -31,6 +32,7 @@ void CameraMovement::OnFixedUpdate()
     bool D = GetAsyncKeyState('D') & 0x8000;
     bool A = GetAsyncKeyState('A') & 0x8000;
     bool E = GetAsyncKeyState('E') & 0x8000;
+    bool M = GetAsyncKeyState('M') & 0x8000;
 
     bool LEFT = GetAsyncKeyState(VK_LEFT) & 0x8000;
     bool RIGHT = GetAsyncKeyState(VK_RIGHT) & 0x8000;
@@ -63,4 +65,11 @@ void CameraMovement::OnFixedUpdate()
     mPitch = std::clamp(mPitch, -limit, limit);
 
     t.SetCameraRotation(mYaw, mPitch);
+
+
+    if (M)
+    {
+        if (m_pOwner->GetComponent<MeshRenderer>() != nullptr)
+            m_pOwner->GetComponent<MeshRenderer>()->SetColor(Color::Green);
+    }
 }

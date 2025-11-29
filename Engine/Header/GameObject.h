@@ -24,7 +24,7 @@ public:
 
 	template<class ComponentClass> bool HasComponent() const;
 	template<class ComponentClass> ComponentClass const& GetComponent() const;
-	template<class ComponentClass> ComponentClass& GetComponent();
+	template<class ComponentClass> ComponentClass* GetComponent();
 	template<class ComponentClass> ComponentClass& AddComponent();
 	template<class ComponentClass> void RemoveComponent();
 
@@ -112,9 +112,9 @@ inline ComponentClass const& GameObject::GetComponent() const
 }
 
 template<class ComponentClass>
-inline ComponentClass& GameObject::GetComponent()
+inline ComponentClass* GameObject::GetComponent()
 {
-	return *static_cast<ComponentClass*>(m_components[ComponentClass::Tag]);
+	return static_cast<ComponentClass*>(m_components[ComponentClass::Tag]);
 }
 
 template <>
