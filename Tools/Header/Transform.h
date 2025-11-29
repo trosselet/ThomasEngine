@@ -46,6 +46,11 @@ public:
     void SetRotationYPR(const DirectX::XMFLOAT3& _ypr);
     void XM_CALLCONV SetRotationYPR(DirectX::FXMVECTOR _ypr);
     void RotateYPR(const DirectX::XMFLOAT3& _ypr);
+    void SetRotationCartesian(const DirectX::XMFLOAT3& dir);
+    void RotateCartesian(const DirectX::XMFLOAT3& deltaDir);
+    void RotateYaw(float yaw);
+    void RotatePitch(float pitch);
+
 
     const DirectX::XMFLOAT3& GetScalingFLOAT() const;
     DirectX::XMVECTOR GetScaling();

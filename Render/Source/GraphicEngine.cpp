@@ -20,9 +20,8 @@
 GraphicEngine::GraphicEngine(const Window* pWindow)
 {
 	m_pRender = new Render(pWindow);
-    // create a simple offscreen render target for post processing tests
-    m_pOffscreenRT = new RenderTarget(m_pRender->GetRenderResources(), pWindow->GetWidth(), pWindow->GetHeight());
-    m_pRender->SetOffscreenRenderTarget(m_pOffscreenRT);
+    //m_pOffscreenRT = new RenderTarget(m_pRender->GetRenderResources(), pWindow->GetWidth(), pWindow->GetHeight());
+    //m_pRender->SetOffscreenRenderTarget(m_pOffscreenRT);
 	PrimitiveGeometry::InitializeGeometry();
 }
 

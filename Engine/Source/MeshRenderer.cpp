@@ -21,18 +21,7 @@ MeshRenderer::~MeshRenderer()
 
 void MeshRenderer::SetRectangle(Color c)
 {
-	Free();
-
-	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
-
-	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, c);
-
-
-	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
-	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(m_pTexture);
-	m_primitive = true;
+	SetRectangle("DefaultTex.dds", c);
 }
 
 void MeshRenderer::SetRectangle(const char* texturePath, Color c)
@@ -41,13 +30,32 @@ void MeshRenderer::SetRectangle(const char* texturePath, Color c)
 
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreatePrimitiveGeometry(SQUARE, c);
+
+	std::string geomKey = "primitive:rect";
+	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry*
+		{
+			return graphics.CreatePrimitiveGeometry(SQUARE, c);
+		});
+	m_ownsGeometry = false;
 
 
-	m_pTexture = graphics.CreateTexture(texturePath);
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	std::string texKey = std::string("tex:") + texturePath;
+	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
+		{
+			return graphics.CreateTexture(texturePath);
+		});
+	m_ownsMaterial = false;
+
+	std::string meshKey = geomKey + std::string("_mesh");
+	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]()->Mesh*
+		{
+			return graphics.CreateMeshDeferred(m_pGeometry);
+		});
+	m_ownsMesh = false;
+
 	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(m_pTexture);
+	m_pMaterial->SetTexture(pTexture, m_ownsMaterial);
+
 	m_primitive = true;
 }
 
@@ -83,17 +91,7 @@ void MeshRenderer::SetCircle(const char* texturePath, Color c)
 
 void MeshRenderer::SetCube(Color c)
 {
-	Free();
-
-	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
-
-	m_pGeometry = graphics.CreatePrimitiveGeometry(CUBE, c);
-
-	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
-	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(m_pTexture);
-	m_primitive = true;
+	SetCube("DefaultTex.dds", c);
 }
 
 void MeshRenderer::SetCube(const char* texturePath, Color c)
@@ -102,12 +100,32 @@ void MeshRenderer::SetCube(const char* texturePath, Color c)
 
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	m_pGeometry = graphics.CreatePrimitiveGeometry(CUBE, c);
 
-	m_pTexture = graphics.CreateTexture(texturePath);
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
+	std::string geomKey = "primitive:cube";
+	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry*
+		{
+			return graphics.CreatePrimitiveGeometry(CUBE, c);
+		});
+	m_ownsGeometry = false;
+
+
+	std::string texKey = std::string("tex:") + texturePath;
+	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
+		{
+			return graphics.CreateTexture(texturePath);
+		});
+	m_ownsMaterial = false;
+
+	std::string meshKey = geomKey + std::string("_mesh");
+	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]()->Mesh*
+		{
+			return graphics.CreateMeshDeferred(m_pGeometry);
+		});
+	m_ownsMesh = false;
+
 	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(m_pTexture);
+	m_pMaterial->SetTexture(pTexture, m_ownsMaterial);
+
 	m_primitive = true;
 }
 
@@ -129,7 +147,7 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* textureP
 	std::string extension = std::filesystem::path(objPath).extension().string();
 
 	std::string geomKey = extension + ":" + objPath;
-	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry* 
+	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry*
 		{
 			return graphics.CreateGeometryFromFile(objPath, extension.c_str());
 		});
@@ -137,14 +155,14 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* textureP
 
 
 	std::string texKey = std::string("tex:") + texturePath;
-	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture* 
+	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
 		{
 			return graphics.CreateTexture(texturePath);
 		});
 	m_ownsMaterial = false;
 
 	std::string meshKey = geomKey + std::string("_mesh");
-	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]()->Mesh* 
+	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]()->Mesh*
 		{
 			return graphics.CreateMeshDeferred(m_pGeometry);
 		});

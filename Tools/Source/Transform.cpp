@@ -140,6 +140,96 @@ void TRANSFORM::RotateYPR(const DirectX::XMFLOAT3& _ypr)
 	SetRotationQuaternion(qResult);
 }
 
+void TRANSFORM::SetRotationCartesian(const DirectX::XMFLOAT3& dir)
+{
+
+	DirectX::XMVECTOR forward = DirectX::XMLoadFloat3(&dir);
+	const float eps = 1e-6f;
+
+	DirectX::XMVECTOR lenV = DirectX::XMVector3Length(forward);
+	float len = DirectX::XMVectorGetX(lenV);
+
+	if (len < eps)
+	{
+		return;
+	}
+
+	forward = DirectX::XMVector3Normalize(forward);
+	DirectX::XMVECTOR baseForward = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+	float d = DirectX::XMVectorGetX(DirectX::XMVector3Dot(baseForward, forward));
+
+	if (d > 1.0f) d = 1.0f;
+	if (d < -1.0f) d = -1.0f;
+
+	if (d > 1.0f - eps)
+	{
+		SetRotationQuaternion(DirectX::XMQuaternionIdentity());
+		return;
+	}
+	else if (d < -1.0f + eps)
+	{
+		DirectX::XMVECTOR axis = DirectX::XMVector3Cross(baseForward, DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+
+		if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(axis)) < eps)
+			axis = DirectX::XMVector3Cross(baseForward, DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f));
+
+		axis = DirectX::XMVector3Normalize(axis);
+
+		DirectX::XMVECTOR q = DirectX::XMQuaternionRotationAxis(axis, XM_PI);
+
+		SetRotationQuaternion(q);
+
+		return;
+	}
+
+	DirectX::XMVECTOR axis = DirectX::XMVector3Cross(baseForward, forward);
+
+	axis = DirectX::XMVector3Normalize(axis);
+
+	float angle = acosf(d);
+
+	DirectX::XMVECTOR q = DirectX::XMQuaternionRotationAxis(axis, angle);
+
+	SetRotationQuaternion(q);
+}
+
+void TRANSFORM::RotateCartesian(const DirectX::XMFLOAT3& delta)
+{
+	DirectX::XMVECTOR qDelta = DirectX::XMQuaternionRotationRollPitchYaw(
+		delta.x,
+		delta.y,
+		delta.z 
+	);
+
+	DirectX::XMVECTOR qCurrent = GetRotation();
+	DirectX::XMVECTOR qNew = DirectX::XMQuaternionMultiply(qDelta, qCurrent);
+
+	SetRotationQuaternion(qNew);
+}
+
+void TRANSFORM::RotateYaw(float yaw)
+{
+	DirectX::XMVECTOR axis = DirectX::XMVectorSet(0, 1, 0, 0);
+	DirectX::XMVECTOR qDelta = DirectX::XMQuaternionRotationAxis(axis, yaw);
+
+	DirectX::XMVECTOR qCurrent = GetRotation();
+	DirectX::XMVECTOR qNew = DirectX::XMQuaternionMultiply(qDelta, qCurrent);
+
+	SetRotationQuaternion(qNew);
+}
+
+void TRANSFORM::RotatePitch(float pitch)
+{
+	DirectX::XMVECTOR right =  DirectX::XMVectorSet(1, 0, 0, 0);
+	DirectX::XMVECTOR qDelta = DirectX::XMQuaternionRotationAxis(right, pitch);
+
+	DirectX::XMVECTOR qCurrent = GetRotation();
+	DirectX::XMVECTOR qNew = DirectX::XMQuaternionMultiply(qDelta, qCurrent);
+
+	SetRotationQuaternion(qNew);
+}
+
 const DirectX::XMFLOAT3& TRANSFORM::GetScalingFLOAT() const
 {
 	return mvScaling;
