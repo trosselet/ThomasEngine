@@ -48,7 +48,8 @@ UINT RenderResources::AllocateRTV()
 
 void RenderResources::FreeRTV(UINT index)
 {
-    if (index < RTV_POOL_SIZE) m_rtvPoolUsed[index] = 0;
+    if (index < RTV_POOL_SIZE && m_rtvPoolUsed.empty() != true)
+		m_rtvPoolUsed[index] = 0;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetRTVHandle(UINT index)
@@ -75,7 +76,8 @@ UINT RenderResources::AllocateDSV()
 
 void RenderResources::FreeDSV(UINT index)
 {
-    if (index < DSV_POOL_SIZE) m_dsvPoolUsed[index] = 0;
+    if (index < DSV_POOL_SIZE && m_dsvPoolUsed.empty() != true) 
+		m_dsvPoolUsed[index] = 0;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderResources::GetDSVHandle(UINT index)
@@ -93,7 +95,9 @@ RenderResources::~RenderResources()
 
 	if (m_pCommandList) { m_pCommandList->Release(); m_pCommandList = nullptr; }
 	if (m_pPipelineState) { m_pPipelineState->Release(); m_pPipelineState = nullptr; }
+	if (m_pPostProcessPSO) { m_pPostProcessPSO->Release(); m_pPostProcessPSO = nullptr; }
 	if (m_pRootSignature) { m_pRootSignature->Release(); m_pRootSignature = nullptr; }
+	if (m_pPostProcessRootSignature) { m_pPostProcessRootSignature->Release(); m_pPostProcessRootSignature = nullptr; }
 	if (m_pCommandAllocator) { m_pCommandAllocator->Release(); m_pCommandAllocator = nullptr; }
 
 	for (uint32 n = 0; n < FrameCount; n++)
@@ -105,7 +109,6 @@ RenderResources::~RenderResources()
 	if (m_pDepthStencil) { m_pDepthStencil->Release(); m_pDepthStencil = nullptr; }
 	if (m_pDsvDescriptorHeap) { m_pDsvDescriptorHeap->Release(); m_pDsvDescriptorHeap = nullptr; }
 
-    // release RTV/DSV pool heaps
     if (m_pRtvPoolHeap) { m_pRtvPoolHeap->Release(); m_pRtvPoolHeap = nullptr; }
     if (m_pDsvPoolHeap) { m_pDsvPoolHeap->Release(); m_pDsvPoolHeap = nullptr; }
     m_rtvPoolUsed.clear();
