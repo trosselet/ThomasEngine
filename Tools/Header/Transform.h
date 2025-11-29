@@ -48,8 +48,7 @@ public:
     void RotateYPR(const DirectX::XMFLOAT3& _ypr);
     void SetRotationCartesian(const DirectX::XMFLOAT3& dir);
     void RotateCartesian(const DirectX::XMFLOAT3& deltaDir);
-    void RotateYaw(float yaw);
-    void RotatePitch(float pitch);
+    void SetCameraRotation(float yaw, float pitch);
 
 
     const DirectX::XMFLOAT3& GetScalingFLOAT() const;
@@ -73,6 +72,11 @@ public:
     DirectX::XMVECTOR operator * (const DirectX::XMFLOAT3& _other);
 
     void Reset();
+
+
+private:
+    float mYaw = 0.0f;
+    float mPitch = 0.0f;
 };
 
 #endif // !TRANSFORM_INCLUDE__H

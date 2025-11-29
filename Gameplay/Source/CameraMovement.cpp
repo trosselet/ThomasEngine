@@ -3,6 +3,8 @@
 #include <Engine/Header/IScript.h>
 #include <Engine/Header/GameManager.h>
 
+constexpr float PIDIV2 = 1.570796327f;
+
 CameraMovement::CameraMovement()
 {
     cameraSpeed = 0.05f;
@@ -44,7 +46,7 @@ void CameraMovement::OnFixedUpdate()
     const float moveSpeed = cameraSpeed;
     const float rotSpeed = 0.02f;
 
-
+    // Déplacement
     if (Z) t.OffsetPosition((f * moveSpeed).ToXMFLOAT3());
     if (S) t.OffsetPosition((f * -moveSpeed).ToXMFLOAT3());
     if (D) t.OffsetPosition((r * moveSpeed).ToXMFLOAT3());
@@ -52,18 +54,13 @@ void CameraMovement::OnFixedUpdate()
     if (E) t.OffsetPosition((u * moveSpeed).ToXMFLOAT3());
     if (A) t.OffsetPosition((u * -moveSpeed).ToXMFLOAT3());
 
+    if (LEFT)  mYaw -= rotSpeed;
+    if (RIGHT) mYaw += rotSpeed;
+    if (UP)    mPitch -= rotSpeed;
+    if (DOWN)  mPitch += rotSpeed;
 
-    float pitch = 0;
-    float yaw = 0;
+    const float limit = PIDIV2 - 0.01f;
+    mPitch = std::clamp(mPitch, -limit, limit);
 
-    if (LEFT)  yaw -= rotSpeed;
-    if (RIGHT) yaw += rotSpeed;
-    if (UP)    pitch -= rotSpeed;
-    if (DOWN)  pitch += rotSpeed;
-
-    if (yaw != 0)
-        t.RotateYaw(yaw);
-
-    if (pitch != 0)
-        t.RotatePitch(pitch);
+    t.SetCameraRotation(mYaw, mPitch);
 }

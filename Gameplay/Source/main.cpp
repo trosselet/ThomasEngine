@@ -31,6 +31,13 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pSecondCamera->SetName("Camera2");
     //pSecondCamera->AddScript<CameraMovement>();
 
+    GameObject* const pPlateform = new GameObject(scene);
+    pPlateform->transform.SetPosition({ 0.0f, -1.0f, 5.0f });
+    pPlateform->transform.SetScaling(Vector3{ 10.0f, 0.2f, 10.0f });
+    MeshRenderer& pPlateformMeshRenderer = pPlateform->AddComponent<MeshRenderer>();
+    pPlateformMeshRenderer.SetCube("grid_placeholder_material.dds", Color::White);
+    pPlateform->SetName("Plateform");
+
     GameObject* const pRectangle = new GameObject(scene);
     pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
     MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();

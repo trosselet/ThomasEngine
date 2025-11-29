@@ -208,26 +208,17 @@ void TRANSFORM::RotateCartesian(const DirectX::XMFLOAT3& delta)
 	SetRotationQuaternion(qNew);
 }
 
-void TRANSFORM::RotateYaw(float yaw)
+void TRANSFORM::SetCameraRotation(float yaw, float pitch)
 {
-	DirectX::XMVECTOR axis = DirectX::XMVectorSet(0, 1, 0, 0);
-	DirectX::XMVECTOR qDelta = DirectX::XMQuaternionRotationAxis(axis, yaw);
+	mYaw = yaw;
+	mPitch = std::clamp(pitch, -XM_PIDIV2 + 0.01f, XM_PIDIV2 - 0.01f);
 
-	DirectX::XMVECTOR qCurrent = GetRotation();
-	DirectX::XMVECTOR qNew = DirectX::XMQuaternionMultiply(qDelta, qCurrent);
+	XMVECTOR qYaw = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), mYaw);
+	XMVECTOR qPitch = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), mPitch);
 
-	SetRotationQuaternion(qNew);
-}
+	XMVECTOR q = XMQuaternionMultiply(qPitch, qYaw);
 
-void TRANSFORM::RotatePitch(float pitch)
-{
-	DirectX::XMVECTOR right =  DirectX::XMVectorSet(1, 0, 0, 0);
-	DirectX::XMVECTOR qDelta = DirectX::XMQuaternionRotationAxis(right, pitch);
-
-	DirectX::XMVECTOR qCurrent = GetRotation();
-	DirectX::XMVECTOR qNew = DirectX::XMQuaternionMultiply(qDelta, qCurrent);
-
-	SetRotationQuaternion(qNew);
+	SetRotationQuaternion(q);
 }
 
 const DirectX::XMFLOAT3& TRANSFORM::GetScalingFLOAT() const
