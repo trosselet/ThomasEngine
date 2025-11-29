@@ -180,8 +180,8 @@ GraphicEngine* Window::GetGraphicEngine() const
 void Window::OnSize(uint32 width, uint32 height)
 {
     m_pGraphic->GetRender()->GetRenderResources()->Resize(width, height);
-    if (m_pGraphic)
+    /*if (m_pGraphic)
     {
         m_pGraphic->RecreateOffscreenRT(width, height);
-    }
+    }*/
 }
