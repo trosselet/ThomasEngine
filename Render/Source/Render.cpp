@@ -120,7 +120,7 @@ void Render::Display()
 {
     ID3D12GraphicsCommandList* cmdList = m_pRenderResources->GetCommandList();
 
-    if (m_pOffscreenRT)
+    /*if (m_pOffscreenRT)
         m_pOffscreenRT->Transition(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     D3D12_CPU_DESCRIPTOR_HANDLE backRtv = m_pRenderResources->GetCurrentRTV();
@@ -155,7 +155,16 @@ void Render::Display()
 
     backBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     backBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    cmdList->ResourceBarrier(1, &backBarrier);
+    cmdList->ResourceBarrier(1, &backBarrier);*/
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
+    barrier.Transition.Subresource = 0;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    cmdList->ResourceBarrier(1, &barrier);
 
     cmdList->Close();
     m_pRenderResources->ExecuteCommandList();
