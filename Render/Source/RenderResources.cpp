@@ -31,6 +31,49 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreatePipelineState(m_pDevice, SHADER_PATH);
 	CreatePostProcessPSO(m_pDevice, SHADER_PP_PATH);
 	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
+
+    CreateBundles(4);
+}
+
+void RenderResources::CreateBundles(UINT count)
+{
+    // release existing
+    for (auto cl : m_bundleCommandLists) { if (cl) cl->Release(); }
+    for (auto alloc : m_bundleAllocators) { if (alloc) alloc->Release(); }
+    m_bundleCommandLists.clear();
+    m_bundleAllocators.clear();
+
+    m_bundleCount = count;
+    UINT total = count * FrameCount;
+    m_bundleCommandLists.resize(total);
+    m_bundleAllocators.resize(total);
+
+    for (UINT f = 0; f < FrameCount; ++f)
+    {
+        for (UINT i = 0; i < count; ++i)
+        {
+            UINT idx = f * count + i;
+            m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&m_bundleAllocators[idx]));
+            m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, m_bundleAllocators[idx], nullptr, IID_PPV_ARGS(&m_bundleCommandLists[idx]));
+            if (m_bundleCommandLists[idx]) m_bundleCommandLists[idx]->Close();
+        }
+    }
+}
+
+ID3D12GraphicsCommandList* RenderResources::GetBundleCommandList(UINT index)
+{
+    if (index >= m_bundleCount) return nullptr;
+    UINT idx = m_frameIndex * m_bundleCount + index;
+    if (idx >= m_bundleCommandLists.size()) return nullptr;
+    return m_bundleCommandLists[idx];
+}
+
+ID3D12CommandAllocator* RenderResources::GetBundleAllocator(UINT index)
+{
+    if (index >= m_bundleCount) return nullptr;
+    UINT idx = m_frameIndex * m_bundleCount + index;
+    if (idx >= m_bundleAllocators.size()) return nullptr;
+    return m_bundleAllocators[idx];
 }
 
 UINT RenderResources::AllocateRTV()
@@ -43,7 +86,7 @@ UINT RenderResources::AllocateRTV()
             return i;
         }
     }
-    return UINT_MAX; // no free
+    return UINT_MAX;
 }
 
 void RenderResources::FreeRTV(UINT index)
@@ -108,6 +151,11 @@ RenderResources::~RenderResources()
 
 	if (m_pDepthStencil) { m_pDepthStencil->Release(); m_pDepthStencil = nullptr; }
 	if (m_pDsvDescriptorHeap) { m_pDsvDescriptorHeap->Release(); m_pDsvDescriptorHeap = nullptr; }
+
+    for (auto cl : m_bundleCommandLists) { if (cl) { cl->Release(); } }
+    for (auto alloc : m_bundleAllocators) { if (alloc) { alloc->Release(); } }
+    m_bundleCommandLists.clear();
+    m_bundleAllocators.clear();
 
     if (m_pRtvPoolHeap) { m_pRtvPoolHeap->Release(); m_pRtvPoolHeap = nullptr; }
     if (m_pDsvPoolHeap) { m_pDsvPoolHeap->Release(); m_pDsvPoolHeap = nullptr; }

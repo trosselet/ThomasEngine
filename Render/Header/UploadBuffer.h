@@ -2,7 +2,11 @@
 #define UPLOAD_BUFFER_INCLUDE__H
 
 #include <Tools/Header/Utils.h>
-#include <DirectXMath.h>
+#include <DirectXMath.h> 
+
+#include <d3d12.h>
+#include <wrl/client.h>
+#include <cstring>
 
 struct ConstantBuffer
 {

@@ -3,6 +3,10 @@
 
 #include <vector>
 
+#include <d3d12.h>
+#include <d3dcommon.h>
+#include <dxgi1_4.h>
+
 struct IDXGIFactory2;
 struct IDXGIAdapter;
 struct ID3D12Device;
@@ -64,7 +68,12 @@ public:
 
 	UINT AllocateSRVHeapIndex() { return m_srvHeapIndex++; }
 
-private:
+	void CreateBundles(UINT count);
+	ID3D12GraphicsCommandList* GetBundleCommandList(UINT index);
+	ID3D12CommandAllocator* GetBundleAllocator(UINT index);
+	UINT GetBundleCount() const { return m_bundleCount; }
+
+	private:
 	void CreateDXGIFactory();
 	void CreateDXGIAdapters();
 
@@ -84,7 +93,6 @@ private:
 	void CreateFence(ID3D12Device* pDevice);
 	void UpdateViewport(uint32 width, uint32 height);
 	void CreateDepthStencilResources(UINT width, UINT height);
-
 private:
 	IDXGIFactory2* m_pFactory = nullptr;
 	IDXGIAdapter* m_pAdapter = nullptr;
@@ -109,9 +117,12 @@ private:
 	ID3D12Resource* m_pDepthStencil = nullptr;
 	UINT m_rtvDescriptorSize;
 
+    std::vector<ID3D12CommandAllocator*> m_bundleAllocators;
+    std::vector<ID3D12GraphicsCommandList*> m_bundleCommandLists;
+    UINT m_bundleCount = 0;
+
 private:
 private:
-    // Descriptor pool heaps for RTV/DSV allocations
     ID3D12DescriptorHeap* m_pRtvPoolHeap = nullptr;
     ID3D12DescriptorHeap* m_pDsvPoolHeap = nullptr;
     UINT m_rtvPoolDescriptorSize = 0;
@@ -122,7 +133,6 @@ private:
     std::vector<char> m_dsvPoolUsed;
 
 public:
-    // RTV/DSV pool allocator
     UINT AllocateRTV();
     void FreeRTV(UINT index);
     D3D12_CPU_DESCRIPTOR_HANDLE GetRTVHandle(UINT index);

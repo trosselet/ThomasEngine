@@ -2,6 +2,7 @@
 #define MATERIAL_INCLUDE__H
 
 #include <Render/Header/UploadBuffer.h>
+#include <mutex>
 
 class Render;
 class Texture;
@@ -18,11 +19,12 @@ public:
 	void UpdateWorldConstantBuffer(DirectX::XMMATRIX const& matrix);
 
 	void SetTexture(Texture* pTexture, bool fromCache = true);
-	bool UpdateTexture(int16 position);
+	bool UpdateTexture(int16 position, ID3D12GraphicsCommandList* cmd = nullptr);
 	Texture* GetTexture();
 
 private:
 	UploadBuffer<ObjectData> m_uploadBuffer;
+	std::mutex m_uploadMutex;
 
 	Texture* m_pTexture;
 	Render* m_pRender;

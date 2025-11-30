@@ -29,9 +29,10 @@ UploadBuffer<ObjectData>* Material::GetUploadBuffer()
 
 void Material::UpdateWorldConstantBuffer(DirectX::XMMATRIX const& matrix)
 {
-	ObjectData dataCb = {};
-	DirectX::XMStoreFloat4x4(&dataCb.world, DirectX::XMMatrixTranspose(matrix));
-	m_uploadBuffer.CopyData(0, dataCb);
+    ObjectData dataCb = {};
+    DirectX::XMStoreFloat4x4(&dataCb.world, DirectX::XMMatrixTranspose(matrix));
+    std::lock_guard<std::mutex> lock(m_uploadMutex);
+    m_uploadBuffer.CopyData(0, dataCb);
 }
 
 void Material::SetTexture(Texture* pTexture, bool fromCache)
@@ -40,13 +41,22 @@ void Material::SetTexture(Texture* pTexture, bool fromCache)
 	m_isInCache = !fromCache;
 }
 
-bool Material::UpdateTexture(int16 position)
+bool Material::UpdateTexture(int16 position, ID3D12GraphicsCommandList* cmd)
 {
-	if (m_pTexture != nullptr)
-	{
-		m_pRender->GetRenderResources()->GetCommandList()->SetGraphicsRootDescriptorTable(position, m_pTexture->GetTextureAddress());
-	}
-	return true;
+    if (m_pTexture == nullptr) return false;
+
+    // allow caller to provide command list for multi-threaded recording (bundle)
+    if (cmd == nullptr)
+    {
+        if (m_pRender)
+            cmd = m_pRender->GetRenderResources()->GetCommandList();
+        else
+            return false;
+    }
+
+    std::lock_guard<std::mutex> lock(m_uploadMutex);
+    cmd->SetGraphicsRootDescriptorTable((UINT)position, m_pTexture->GetTextureAddress());
+    return true;
 }
 
 Texture* Material::GetTexture()

@@ -25,6 +25,21 @@ GraphicEngine::GraphicEngine(const Window* pWindow)
 	PrimitiveGeometry::InitializeGeometry();
 }
 
+UINT64 GraphicEngine::GetFrameCBAddress() const
+{
+    if (!m_pRender) return 0;
+    return m_pRender->m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress();
+}
+
+void GraphicEngine::BindFrameConstants()
+{
+    Render* r = m_pRender;
+    if (!r) return;
+    ID3D12GraphicsCommandList* cmd = r->GetRenderResources()->GetCommandList();
+    if (!cmd) return;
+    cmd->SetGraphicsRootConstantBufferView(0, r->m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
+}
+
 GraphicEngine::~GraphicEngine()
 {
 
@@ -203,7 +218,6 @@ Render* GraphicEngine::GetRender()
 
 void GraphicEngine::RecreateOffscreenRT(uint32 width, uint32 height)
 {
-    // choose reduced resolution (half size) for postprocess target
     uint32 rtW = std::max<uint32>(1, width / 2);
     uint32 rtH = std::max<uint32>(1, height / 2);
 

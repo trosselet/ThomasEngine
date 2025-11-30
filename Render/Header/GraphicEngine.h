@@ -41,6 +41,9 @@ public:
 
 	Mesh* CreateMeshDeferred(Geometry* pGeometry);
 	void ProcessPendingUploads();
+    
+    void BindFrameConstants();
+    UINT64 GetFrameCBAddress() const;
 
 
 	std::vector<RenderTarget*> GetRenderTargets() const;

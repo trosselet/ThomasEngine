@@ -8,6 +8,8 @@
 class GraphicEngine;
 class RenderTarget;
 class MeshRenderer;
+class Material;
+class Mesh;
 
 class RenderSystem
 {
@@ -15,6 +17,15 @@ public:
 	RenderSystem(GraphicEngine* pGraphic);
 	~RenderSystem() = default;
 	void Rendering();
+
+private:
+    void RenderLayerBatched(const std::vector<MeshRenderer const*>& layer);
+
+    struct BatchKey
+    {
+        const Material* material;
+        const Mesh* mesh;
+    };
 
 private:
 	std::array<std::vector<MeshRenderer const*>, 16> m_meshRenderers{};
