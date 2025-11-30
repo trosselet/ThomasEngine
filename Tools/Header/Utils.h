@@ -65,6 +65,16 @@ namespace Utils
 	}
 #pragma endregion
 
+#pragma region Debug
+	inline void ThrowIfFailed(HRESULT hr)
+	{
+		if (FAILED(hr))
+		{
+			Utils::DebugError("HRESULT failed with code: ", static_cast<int>(hr));
+			throw std::runtime_error("HRESULT failed");
+		}
+	}
+#pragma endregion
 
 #pragma region Mathematical Tools
 	inline float Lerp(float start, float end, float time)

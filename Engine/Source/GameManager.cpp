@@ -249,6 +249,6 @@ void GameManager::RenderThreadFunc()
 		printf("\033[%d;%dH\033[2K  [ENGINE] Rendering time: %f", 10, 0, renderEndTime);
 		printf("\033[%d;%dH\033[2K  [ENGINE] Scene object number: %d", 11, 0, (int)GetActiveScene().GetGameObjects().size());
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		std::this_thread::sleep_for(std::chrono::milliseconds(0));
 	}
 }
