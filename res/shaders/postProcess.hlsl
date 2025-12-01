@@ -37,5 +37,5 @@ SamplerState linearSampler : register(s0);
 float4 psmain(VSOut i) : SV_TARGET
 {
     //return inputTexture.Sample(linearSampler, i.uv);
-    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+    return float4(1.0f, 0.0f, 0.0f, 0.5f);
 }
