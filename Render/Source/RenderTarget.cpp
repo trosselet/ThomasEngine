@@ -72,7 +72,10 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 		srvDesc.Format = m_format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.PlaneSlice = 0;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 		m_pResources->GetDevice()->CreateShaderResourceView(m_pColor, &srvDesc, cpuHandle);
 		m_srvCpu = cpuHandle;
@@ -130,6 +133,9 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 
 	m_viewport = { 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f };
 	m_scissor = { 0, 0, static_cast<LONG>(width), static_cast<LONG>(height) };
+
+
+	Utils::DebugLog("RT Viewport = ", m_viewport.Width, ", ", m_viewport.Height);
 
 }
 

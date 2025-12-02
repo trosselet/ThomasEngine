@@ -2,10 +2,25 @@
 #define DXGI_RESOURCES__H
 
 #include <vector>
+#include <filesystem>
 
 #include <d3d12.h>
 #include <d3dcommon.h>
 #include <dxgi1_4.h>
+
+#if _EXE
+
+#define SHADER_PATH L"shaders/shader.hlsl"
+#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
+
+#else
+
+#define SHADER_PATH L"shaders/shader.hlsl"
+#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
+
+#endif
+
+
 
 struct IDXGIFactory2;
 struct IDXGIAdapter;
@@ -73,7 +88,7 @@ public:
 	ID3D12CommandAllocator* GetBundleAllocator(UINT index);
 	UINT GetBundleCount() const { return m_bundleCount; }
 
-	private:
+private:
 	void CreateDXGIFactory();
 	void CreateDXGIAdapters();
 
@@ -93,6 +108,7 @@ public:
 	void CreateFence(ID3D12Device* pDevice);
 	void UpdateViewport(uint32 width, uint32 height);
 	void CreateDepthStencilResources(UINT width, UINT height);
+
 private:
 	IDXGIFactory2* m_pFactory = nullptr;
 	IDXGIAdapter* m_pAdapter = nullptr;
@@ -122,7 +138,6 @@ private:
     UINT m_bundleCount = 0;
 
 private:
-private:
     ID3D12DescriptorHeap* m_pRtvPoolHeap = nullptr;
     ID3D12DescriptorHeap* m_pDsvPoolHeap = nullptr;
     UINT m_rtvPoolDescriptorSize = 0;
@@ -151,7 +166,6 @@ private:
 
 	D3D12_RECT m_scissorRect;
 	D3D12_VIEWPORT m_screenViewport;
-
 };
 
 #endif // !DXGI_RESOURCES__H

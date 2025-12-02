@@ -1,17 +1,7 @@
 #include <Render/pch.h>
 #include <Render/Header/Renderresources.h>
 
-#if _EXE
 
-#define SHADER_PATH L"shaders/shader.hlsl"
-#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
-
-#else
-
-#define SHADER_PATH L"shaders/shader.hlsl"
-#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
-
-#endif
 
 RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 {
@@ -29,7 +19,13 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateCommandAllocator(m_pDevice);
 
 	CreatePipelineState(m_pDevice, SHADER_PATH);
+
+
+	m_postProcessShaderPath = SHADER_PP_PATH;
+	m_lastPPShaderWrite = std::filesystem::last_write_time(SHADER_PP_PATH);
 	CreatePostProcessPSO(m_pDevice, SHADER_PP_PATH);
+
+
 	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
 
     CreateBundles(4);
@@ -839,47 +835,46 @@ void RenderResources::CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllo
 
 void RenderResources::CreatePostProcessPSO(ID3D12Device* pDevice, const std::wstring& shaderPath)
 {
-    if (!pDevice) return;
+	if (!pDevice) return;
 
-    ID3DBlob* vsBlob = CompileShader(shaderPath, "vs_5_0");
-    ID3DBlob* psBlob = CompileShader(shaderPath, "ps_5_0");
+	ID3DBlob* vsBlob = CompileShader(shaderPath, "vs_5_0");
+	ID3DBlob* psBlob = CompileShader(shaderPath, "ps_5_0");
 
-    if (!vsBlob || !psBlob) return;
+	if (!vsBlob || !psBlob) return;
 
 	CreatePostProcessRootSignature(pDevice);
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-    psoDesc.pRootSignature = m_pPostProcessRootSignature;
-    psoDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
-    psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.pRootSignature = m_pPostProcessRootSignature;
 
-    psoDesc.InputLayout = { nullptr, 0 };
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
+	psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
 
-    psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-    psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    psoDesc.RasterizerState.DepthClipEnable = FALSE;
+	psoDesc.InputLayout = { nullptr, 0 };
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-    D3D12_DEPTH_STENCIL_DESC depthDesc = {};
-    depthDesc.DepthEnable = FALSE;
-    depthDesc.StencilEnable = FALSE;
-    psoDesc.DepthStencilState = depthDesc;
-    psoDesc.SampleMask = UINT_MAX;
+	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	psoDesc.RasterizerState.DepthClipEnable = FALSE;
 
-    psoDesc.NumRenderTargets = 1;
-    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    psoDesc.SampleDesc.Count = 1;
+	D3D12_DEPTH_STENCIL_DESC depthDesc = {};
+	depthDesc.DepthEnable = FALSE;
+	depthDesc.StencilEnable = FALSE;
+	psoDesc.DepthStencilState = depthDesc;
 
-    psoDesc.BlendState.AlphaToCoverageEnable = TRUE;
-    psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.NumRenderTargets = 1;
+	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.SampleDesc.Count = 1;
 
-    if (FAILED(pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPostProcessPSO))))
-    {
-        Utils::DebugError("Failed to create post process PSO");
-    }
+	psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+	psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-    if (vsBlob) vsBlob->Release();
-    if (psBlob) psBlob->Release();
+	if (FAILED(pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPostProcessPSO))))
+		Utils::DebugError("Failed to create post process PSO");
+
+	if (vsBlob) vsBlob->Release();
+	if (psBlob) psBlob->Release();
 }
 
 void RenderResources::CreatePostProcessRootSignature(ID3D12Device* pDevice)
@@ -888,7 +883,7 @@ void RenderResources::CreatePostProcessRootSignature(ID3D12Device* pDevice)
 	// Root parameter : SRV (t0)  //
 	////////////////////////////////
 
-	D3D12_ROOT_PARAMETER rootParameters[1] = {};
+	D3D12_ROOT_PARAMETER rootParameters[2] = {};
 
 	// Descriptor range for t0
 	D3D12_DESCRIPTOR_RANGE srvRange = {};
@@ -902,6 +897,16 @@ void RenderResources::CreatePostProcessRootSignature(ID3D12Device* pDevice)
 	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
 	rootParameters[0].DescriptorTable.pDescriptorRanges = &srvRange;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+
+	//////////////////////////////////
+	// Dummy Root parameter : (b0)  //
+	//////////////////////////////////
+
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[1].Descriptor.ShaderRegister = 0;
+	rootParameters[1].Descriptor.RegisterSpace = 0;
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
 
 	/////////////////////////////////
