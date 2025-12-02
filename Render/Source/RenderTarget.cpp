@@ -51,7 +51,6 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 		assert(m_pColor != nullptr);
 	}
 
-    // allocate RTV descriptor from pool
     m_rtvIndex = m_pResources->AllocateRTV();
     if (m_rtvIndex != UINT_MAX)
     {
@@ -59,7 +58,6 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
         m_pResources->GetDevice()->CreateRenderTargetView(m_pColor, nullptr, m_rtvCpu);
     }
 
-	// create SRV in the global CBV/SRV/UAV heap
 	{
 		ID3D12DescriptorHeap* heap = m_pResources->GetCbvSrvUavDescriptorHeap();
 		UINT increment = m_pResources->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

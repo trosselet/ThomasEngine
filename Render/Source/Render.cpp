@@ -37,150 +37,119 @@ void Render::Clear()
     if (!m_pRenderResources->ResetCommandList())
         return;
 
-    ID3D12GraphicsCommandList* cmdList = m_pRenderResources->GetCommandList();
-    const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
 
-    /*if (m_pOffscreenRT)
+    const float clearColor[4] = { 0,0,0,1 };
+     
+    m_pOffscreenRT->Transition(cmd, D3D12_RESOURCE_STATE_RENDER_TARGET);
+     
+
+	D3D12_VIEWPORT viewport = m_pOffscreenRT->GetViewport();
+	D3D12_RECT scissor = m_pOffscreenRT->GetScissor();
+
+
+    cmd->RSSetViewports(1, &viewport);
+    cmd->RSSetScissorRects(1, &scissor);
+
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pOffscreenRT->GetRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pOffscreenRT->GetDSV();
+
+    cmd->OMSetRenderTargets(1, &rtv, FALSE,
+        m_pOffscreenRT->HasDepth() ? &dsv : nullptr);
+
+    cmd->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+
+    if (m_pOffscreenRT->HasDepth())
     {
-        
-
-
+        cmd->ClearDepthStencilView(dsv,
+            D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+            1.0f, 0, 0, nullptr);
     }
-    else*/
-    {
-        m_pOffscreenRT->Transition(cmdList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        D3D12_VIEWPORT viewport = m_pOffscreenRT->GetViewport();
-        D3D12_RECT rect = m_pOffscreenRT->GetScissor();
-        cmdList->RSSetViewports(1, &viewport);
-        cmdList->RSSetScissorRects(1, &rect);
+     
+    ID3D12DescriptorHeap* heap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
+    cmd->SetDescriptorHeaps(1, &heap);
 
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pOffscreenRT->GetRTV();
-        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_pOffscreenRT->GetDSV();
-        cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, (m_pOffscreenRT->HasDepth() ? &dsvHandle : nullptr));
-        cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-        if (m_pOffscreenRT->HasDepth())
-            cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 1, &rect);
-
-        ID3D12DescriptorHeap* descHeap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
-        cmdList->SetDescriptorHeaps(1, &descHeap);
-
-        cmdList->SetPipelineState(m_pRenderResources->GetPostProcessPSO());
-        cmdList->SetGraphicsRootSignature(m_pRenderResources->GetPostProcessRootSignature());
-        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-        if (m_pOffscreenRT)
-            m_pOffscreenRT->Transition(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-        D3D12_CPU_DESCRIPTOR_HANDLE backRtv = m_pRenderResources->GetCurrentRTV();
-        D3D12_CPU_DESCRIPTOR_HANDLE backDsv = m_pRenderResources->GetCurrentDSV();
-
-        D3D12_RESOURCE_BARRIER backBarrier = {};
-        backBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        backBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        backBarrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
-        backBarrier.Transition.Subresource = 0;
-        backBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-        backBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        cmdList->ResourceBarrier(1, &backBarrier);
-
-        cmdList->OMSetRenderTargets(1, &backRtv, FALSE, &backDsv);
-
-        if (m_pOffscreenRT)
-        {
-            ID3D12DescriptorHeap* heaps[] = { m_pRenderResources->GetCbvSrvUavDescriptorHeap() };
-            cmdList->SetDescriptorHeaps(_countof(heaps), heaps);
-            cmdList->SetPipelineState(m_pRenderResources->GetPostProcessPSO());
-            cmdList->SetGraphicsRootSignature(m_pRenderResources->GetPostProcessRootSignature());
-            cmdList->SetGraphicsRootDescriptorTable(0, m_pOffscreenRT->GetSRV());
-            cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            cmdList->DrawInstanced(3, 1, 0, 0);
-        }
-
-        backBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        backBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-        cmdList->ResourceBarrier(1, &backBarrier);
-
-
-
-
-
-        D3D12_RESOURCE_BARRIER barrier = {};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        barrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
-        barrier.Transition.Subresource = 0;
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        cmdList->ResourceBarrier(1, &barrier);
-
-        viewport = m_pRenderResources->GetViewport();
-        rect = m_pRenderResources->GetRect();
-        cmdList->RSSetViewports(1, &viewport);
-        cmdList->RSSetScissorRects(1, &rect);
-
-        rtvHandle = m_pRenderResources->GetCurrentRTV();
-        dsvHandle = m_pRenderResources->GetCurrentDSV();
-        cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-        cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-        cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 1, &rect);
-
-        descHeap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
-        cmdList->SetDescriptorHeaps(1, &descHeap);
-
-        cmdList->SetPipelineState(m_pRenderResources->GetPSO());
-        cmdList->SetGraphicsRootSignature(m_pRenderResources->GetRootSignature());
-        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    }
+    cmd->SetPipelineState(m_pRenderResources->GetPSO());
+    cmd->SetGraphicsRootSignature(m_pRenderResources->GetRootSignature());
+    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix)
 {
-	if (pMesh == nullptr) return;
+    if (!pMesh) return;
 
-    // cache command list pointer to avoid repeated lookups
-    ID3D12GraphicsCommandList* cmdList = m_pRenderResources->GetCommandList();
+    ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
 
+    // Upload matrices
     pMaterial->UpdateWorldConstantBuffer(DirectX::XMLoadFloat4x4(&objectWorldMatrix));
 
-    D3D12_VERTEX_BUFFER_VIEW pVbv = pMesh->GetVertexBuffer();
-    cmdList->IASetVertexBuffers(0, 1, &pVbv);
+    // VB / IB
+    auto vb = pMesh->GetVertexBuffer();
+    auto ib = pMesh->GetIndexBuffer();
+    cmd->IASetVertexBuffers(0, 1, &vb);
+    cmd->IASetIndexBuffer(&ib);
 
-    D3D12_INDEX_BUFFER_VIEW pIbv = pMesh->GetIndexBuffer();
-    cmdList->IASetIndexBuffer(&pIbv);
-
-
-    //////////////////////////////////////////
-    // Pos in the root parameter list of t0 //
-    //////////////////////////////////////////
-    // Update texture descriptor table (material-specific)
+    // SRV t2
     pMaterial->UpdateTexture(2);
 
-    cmdList->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
-    cmdList->SetGraphicsRootConstantBufferView(1, pMaterial->GetUploadBuffer()->GetResource()->GetGPUVirtualAddress());
+    // CBV root params
+    cmd->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
+    cmd->SetGraphicsRootConstantBufferView(1, pMaterial->GetUploadBuffer()->GetResource()->GetGPUVirtualAddress());
 
-    cmdList->DrawIndexedInstanced(pMesh->GetIndexCount(), 1, 0, 0, 0);
+    cmd->DrawIndexedInstanced(pMesh->GetIndexCount(), 1, 0, 0, 0);
 
 
 }
 
 void Render::Display()
 {
-    ID3D12GraphicsCommandList* cmdList = m_pRenderResources->GetCommandList();
+    ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
 
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderResources->GetCurrentRenderTarget();
-    barrier.Transition.Subresource = 0;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    cmdList->ResourceBarrier(1, &barrier);
+    m_pOffscreenRT->Transition(cmd, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-    cmdList->Close();
+    auto backBuffer = m_pRenderResources->GetCurrentRenderTarget();
+
+    D3D12_RESOURCE_BARRIER toRT = {};
+    toRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    toRT.Transition.pResource = backBuffer;
+    toRT.Transition.Subresource = 0;
+    toRT.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    toRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    cmd->ResourceBarrier(1, &toRT);
+
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pRenderResources->GetCurrentRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pRenderResources->GetCurrentDSV();
+
+    cmd->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
+
+    D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
+    D3D12_RECT scissor = m_pRenderResources->GetRect();
+
+    cmd->RSSetViewports(1, &viewport);
+    cmd->RSSetScissorRects(1, &scissor);
+
+    ID3D12DescriptorHeap* heap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
+    cmd->SetDescriptorHeaps(1, &heap);
+
+    cmd->SetPipelineState(m_pRenderResources->GetPostProcessPSO());
+    cmd->SetGraphicsRootSignature(m_pRenderResources->GetPostProcessRootSignature());
+    cmd->SetGraphicsRootDescriptorTable(0, m_pOffscreenRT->GetSRV());
+    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    cmd->DrawInstanced(3, 1, 0, 0);
+
+    D3D12_RESOURCE_BARRIER toPresent = {};
+    toPresent.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    toPresent.Transition.pResource = backBuffer;
+    toPresent.Transition.Subresource = 0;
+    toPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    toPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    cmd->ResourceBarrier(1, &toPresent);
+
+    cmd->Close();
     m_pRenderResources->ExecuteCommandList();
     m_pRenderResources->Present(false);
-	m_pRenderResources->WaitForGpu();
+    m_pRenderResources->WaitForGpu();
 }
 
 RenderResources* Render::GetRenderResources()

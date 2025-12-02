@@ -46,14 +46,14 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pRectangleMeshRendererTest.SetRectangle(Color::White);
     pRectangle->SetName("Rectangle1");
 
-    for (int i = 0; i < 8000; i++)
+    /*for (int i = 0; i < 8000; i++)
     {
         GameObject* const pSphere1 = new GameObject(scene);
         pSphere1->transform.SetPosition({ 1.5f, 0.0f, 5.0f });
         MeshRenderer& pSphere1MeshRendererTest = pSphere1->AddComponent<MeshRenderer>();
         pSphere1MeshRendererTest.SetSphere(Color::White);
         pSphere1->SetName("Sphere1");
-    }
+    }*/
    
     GameObject* const pCircle1 = new GameObject(scene);
     pCircle1->transform.SetPosition({ 3.0f, 0.0f, 5.0f });

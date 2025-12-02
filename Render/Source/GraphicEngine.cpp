@@ -218,8 +218,8 @@ Render* GraphicEngine::GetRender()
 
 void GraphicEngine::RecreateOffscreenRT(uint32 width, uint32 height)
 {
-    uint32 rtW = std::max<uint32>(1, width / 2);
-    uint32 rtH = std::max<uint32>(1, height / 2);
+    uint32 rtW = std::max<uint32>(1, width);
+    uint32 rtH = std::max<uint32>(1, height);
 
     if (m_pOffscreenRT)
     {
