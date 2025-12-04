@@ -19,12 +19,7 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateCommandAllocator(m_pDevice);
 
 	CreatePipelineState(m_pDevice, SHADER_PATH);
-
-
-	m_postProcessShaderPath = SHADER_PP_PATH;
-	m_lastPPShaderWrite = std::filesystem::last_write_time(SHADER_PP_PATH);
 	CreatePostProcessPSO(m_pDevice, SHADER_PP_PATH);
-
 
 	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
 
@@ -33,7 +28,6 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 
 void RenderResources::CreateBundles(UINT count)
 {
-    // release existing
     for (auto cl : m_bundleCommandLists) { if (cl) cl->Release(); }
     for (auto alloc : m_bundleAllocators) { if (alloc) alloc->Release(); }
     m_bundleCommandLists.clear();

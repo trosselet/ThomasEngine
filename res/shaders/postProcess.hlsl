@@ -23,6 +23,6 @@ SamplerState linearSampler : register(s0);
 float4 psmain(VSOut input) : SV_TARGET
 {
     float4 color = inputTexture.Sample(linearSampler, input.uv);
-    float4 redFilter = float4(1, 1, 1, 0.5);
+    float4 redFilter = float4(1, 0, 0, 0.0);
     return lerp(color, redFilter, redFilter.a);
 }
