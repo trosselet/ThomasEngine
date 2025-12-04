@@ -6,6 +6,7 @@
 
 #include <Render/Header/ResourcesCache.h>
 #include <vector>
+#include <string>
 
 class Window;
 class Render;
@@ -32,7 +33,7 @@ public:
 	Geometry* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
 	Mesh* CreateMesh(Geometry* pGeometry);
 	Material* CreateMaterial();
-	Texture* CreateTexture(char const* filePath);
+	Texture* CreateTexture(std::string& filePath, const char* extension);
 
 	void SetColor(Geometry* pGeometry, Color c);
 

@@ -29,7 +29,7 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     MeshRenderer& pCameraMeshRenderer = pSecondCamera->AddComponent<MeshRenderer>();
     pCameraMeshRenderer.SetSphere(Color::White);
 	pCameraMeshRenderer.SetColor(Color::Red);
-	pCameraMeshRenderer.SetTexture("wood.dds");
+	pCameraMeshRenderer.SetTexture("wood.jpg");
     pSecondCamera->SetName("Camera2");
     /*pSecondCamera->AddScript<CameraMovement>();*/
 
@@ -37,7 +37,7 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pPlateform->transform.SetPosition({ 0.0f, -1.0f, 5.0f });
     pPlateform->transform.SetScaling(Vector3{ 10.0f, 0.2f, 10.0f });
     MeshRenderer& pPlateformMeshRenderer = pPlateform->AddComponent<MeshRenderer>();
-    pPlateformMeshRenderer.SetCube("grid_placeholder_material.dds", Color::White);
+    pPlateformMeshRenderer.SetCube("grid_placeholder_material.png", Color::White);
     pPlateform->SetName("Plateform");
 
     GameObject* const pRectangle = new GameObject(scene);
@@ -65,15 +65,16 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     GameObject* const pCube1 = new GameObject(scene);
     pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
     MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
-    pCube1MeshRendererTest.SetCube("wood.dds", Color::White);
+    pCube1MeshRendererTest.SetCube("wood.jpg", Color::White);
     pCube1MeshRendererTest.SetColor(Color::Red);
     pCube1->SetName("Cube");
 
     GameObject* const pSky = new GameObject(scene);
     pSky->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    pSky->transform.RotateCartesian({0.0f, 0.0f, 180.0f});
     pSky->transform.SetScaling(Vector3{ -10000.0f, -10000.0f, -10000.0f });
     MeshRenderer& pSkyMeshRendererTest = pSky->AddComponent<MeshRenderer>();
-    pSkyMeshRendererTest.SetSphere("sky.dds", Color::White);
+    pSkyMeshRendererTest.SetSphere("sky.jpg", Color::White);
     pSky->SetName("Sky");
 
     /*GameObject* const pObj = new GameObject(scene);

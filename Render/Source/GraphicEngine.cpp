@@ -8,7 +8,6 @@
 #include <Render/Header/PrimitiveGeometry.h>
 #include <Render/Header/Geometry.h>
 
-
 #include <Render/Header/RenderResources.h>
 #include <Render/Header/Mesh.h>
 #include <Render/Header/Material.h>
@@ -105,10 +104,21 @@ Material* GraphicEngine::CreateMaterial()
 	return new Material(m_pRender);
 }
 
-Texture* GraphicEngine::CreateTexture(char const* filePath)
+Texture* GraphicEngine::CreateTexture(std::string& filePath, const char* extension)
 {
 	m_pRender->GetRenderResources()->ResetCommandList();
-	Texture* pTexture = new Texture(filePath, this);
+
+	Texture* pTexture = nullptr;
+
+	if (strcmp(extension, ".dds") == 0)
+	{
+		pTexture = new Texture(filePath.c_str(), this);
+	}
+	else
+	{
+		pTexture = new Texture(filePath, this);
+	}
+
 	m_pRender->GetRenderResources()->GetCommandList()->Close();
 	m_pRender->GetRenderResources()->ExecuteCommandList();
 	m_pRender->GetRenderResources()->FlushQueue();

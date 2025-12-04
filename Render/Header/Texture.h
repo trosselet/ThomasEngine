@@ -2,6 +2,7 @@
 #define TEXTURE_INCLUDE__H
 
 #include <Tools/Header/PrimitiveTypes.h>
+#include <string>
 
 class GraphicEngine;
 
@@ -10,11 +11,15 @@ class Texture
 public:
 
     Texture(int8 const* path, GraphicEngine* pGraphic);
+    Texture(std::string& path, GraphicEngine* pGraphic);
     ~Texture();
 
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureAddress();
 
     const char* GetTexturePath();
+
+private:
+	void CreateTextureFromMemory(uint8* pixels, int width, int height, int channels, GraphicEngine* pGraphic);
 
 private:
     ID3D12Resource* m_pTexture;
@@ -25,8 +30,9 @@ private:
 
     int m_width = 0;
     int m_height = 0;
+    int m_channels;
 
-    const char* m_path = "";
+    std::string m_path;
 
 };
 

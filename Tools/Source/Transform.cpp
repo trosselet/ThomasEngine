@@ -196,10 +196,16 @@ void TRANSFORM::SetRotationCartesian(const DirectX::XMFLOAT3& dir)
 
 void TRANSFORM::RotateCartesian(const DirectX::XMFLOAT3& delta)
 {
+	DirectX::XMFLOAT3 deltaLocal = delta;
+
+	deltaLocal.x *= DirectX::XM_PI / 180.f;
+	deltaLocal.y *= DirectX::XM_PI / 180.f;
+	deltaLocal.z *= DirectX::XM_PI / 180.f;
+
 	DirectX::XMVECTOR qDelta = DirectX::XMQuaternionRotationRollPitchYaw(
-		delta.x,
-		delta.y,
-		delta.z 
+		deltaLocal.x,
+		deltaLocal.y,
+		deltaLocal.z
 	);
 
 	DirectX::XMVECTOR qCurrent = GetRotation();

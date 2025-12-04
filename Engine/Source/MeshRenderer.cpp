@@ -21,7 +21,7 @@ MeshRenderer::~MeshRenderer()
 
 void MeshRenderer::SetRectangle(Color c)
 {
-	SetRectangle("DefaultTex.dds", c);
+	SetRectangle("DefaultTex.png", c);
 }
 
 void MeshRenderer::SetRectangle(const char* texturePath, Color c)
@@ -38,11 +38,12 @@ void MeshRenderer::SetRectangle(const char* texturePath, Color c)
 		});
 	m_ownsGeometry = false;
 
-
+	std::string textureExtension = std::filesystem::path(texturePath).extension().string();
+	std::string texPath = std::string(texturePath);
 	std::string texKey = std::string("tex:") + texturePath;
 	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
 		{
-			return graphics.CreateTexture(texturePath);
+			return graphics.CreateTexture(texPath, textureExtension.c_str());
 		});
 	m_ownsMaterial = false;
 
@@ -61,17 +62,7 @@ void MeshRenderer::SetRectangle(const char* texturePath, Color c)
 
 void MeshRenderer::SetCircle(Color c)
 {
-	Free();
-
-	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
-
-	m_pGeometry = graphics.CreatePrimitiveGeometry(CIRCLE, c);
-
-	m_pTexture = graphics.CreateTexture("DefaultTex.dds");
-	m_pMesh = graphics.CreateMesh(m_pGeometry);
-	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(m_pTexture);
-	m_primitive = true;
+	SetCircle("DefaultTex.png", c);
 }
 
 void MeshRenderer::SetCircle(const char* texturePath, Color c)
@@ -82,7 +73,10 @@ void MeshRenderer::SetCircle(const char* texturePath, Color c)
 
 	m_pGeometry = graphics.CreatePrimitiveGeometry(CIRCLE, c);
 
-	m_pTexture = graphics.CreateTexture(texturePath);
+	std::string textureExtension = std::filesystem::path(texturePath).extension().string();
+	std::string texPath = std::string(texturePath);
+
+	m_pTexture = graphics.CreateTexture(texPath, textureExtension.c_str());
 	m_pMesh = graphics.CreateMesh(m_pGeometry);
 	m_pMaterial = graphics.CreateMaterial();
 	m_pMaterial->SetTexture(m_pTexture);
@@ -91,7 +85,7 @@ void MeshRenderer::SetCircle(const char* texturePath, Color c)
 
 void MeshRenderer::SetCube(Color c)
 {
-	SetCube("DefaultTex.dds", c);
+	SetCube("DefaultTex.png", c);
 }
 
 void MeshRenderer::SetCube(const char* texturePath, Color c)
@@ -108,11 +102,12 @@ void MeshRenderer::SetCube(const char* texturePath, Color c)
 		});
 	m_ownsGeometry = false;
 
-
+	std::string textureExtension = std::filesystem::path(texturePath).extension().string();
+	std::string texPath = std::string(texturePath);
 	std::string texKey = std::string("tex:") + texturePath;
 	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
 		{
-			return graphics.CreateTexture(texturePath);
+			return graphics.CreateTexture(texPath, textureExtension.c_str());
 		});
 	m_ownsMaterial = false;
 
@@ -131,7 +126,7 @@ void MeshRenderer::SetCube(const char* texturePath, Color c)
 
 void MeshRenderer::SetMeshFile(const char* objPath)
 {
-	SetMeshFileInternal(objPath, "DefaultTex.dds");
+	SetMeshFileInternal(objPath, "DefaultTex.png");
 }
 
 void MeshRenderer::SetMeshFile(const char* objPath, const char* texturePath)
@@ -153,11 +148,12 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* textureP
 		});
 	m_ownsGeometry = false;
 
-
+	std::string textureExtension = std::filesystem::path(texturePath).extension().string();
+	std::string texPath = std::string(texturePath);
 	std::string texKey = std::string("tex:") + texturePath;
 	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
 		{
-			return graphics.CreateTexture(texturePath);
+			return graphics.CreateTexture(texPath, textureExtension.c_str());
 		});
 	m_ownsMaterial = false;
 
@@ -185,7 +181,9 @@ void MeshRenderer::SetTexture(const char* texturePath)
 {
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
-	Texture* pTexture = graphics.CreateTexture(texturePath);
+	std::string textureExtension = std::filesystem::path(texturePath).extension().string();
+	std::string texPath = std::string(texturePath);
+	Texture* pTexture = graphics.CreateTexture(texPath, textureExtension.c_str());
 
 	m_pMaterial->SetTexture(pTexture);
 
@@ -209,7 +207,7 @@ Material* MeshRenderer::GetMaterial()
 
 void MeshRenderer::SetSphere(Color c)
 {
-	SetSphere("DefaultTex.dds", c);
+	SetSphere("DefaultTex.png", c);
 }
 
 void MeshRenderer::SetSphere(const char* texturePath, Color c)
@@ -226,11 +224,12 @@ void MeshRenderer::SetSphere(const char* texturePath, Color c)
 		});
 	m_ownsGeometry = false;
 
-
+	std::string textureExtension = std::filesystem::path(texturePath).extension().string();
+	std::string texPath = std::string(texturePath);
 	std::string texKey = std::string("tex:") + texturePath;
 	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
 		{
-			return graphics.CreateTexture(texturePath);
+			return graphics.CreateTexture(texPath, textureExtension.c_str());
 		});
 	m_ownsMaterial = false;
 

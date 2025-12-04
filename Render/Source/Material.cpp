@@ -45,7 +45,6 @@ bool Material::UpdateTexture(int16 position, ID3D12GraphicsCommandList* cmd)
 {
     if (m_pTexture == nullptr) return false;
 
-    // allow caller to provide command list for multi-threaded recording (bundle)
     if (cmd == nullptr)
     {
         if (m_pRender)
