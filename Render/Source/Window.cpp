@@ -179,7 +179,13 @@ GraphicEngine* Window::GetGraphicEngine() const
 
 void Window::OnSize(uint32 width, uint32 height)
 {
-    m_pGraphic->GetRender()->GetRenderResources()->Resize(width, height);
+    m_pGraphic->GetRender()->SetNeedsResizeWindow();
+
+	WindowResizeInfo resizeInfo = {};
+	resizeInfo.width = width;
+	resizeInfo.height = height;
+
+	m_pGraphic->GetRender()->SetResizeWindow(resizeInfo);
 
     if (m_pGraphic)
     {

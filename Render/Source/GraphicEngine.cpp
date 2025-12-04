@@ -48,12 +48,6 @@ GraphicEngine::~GraphicEngine()
 	m_meshCache.Release();
 
 	delete m_pRender;
-
-    if (m_pOffscreenRT)
-    {
-        delete m_pOffscreenRT;
-        m_pOffscreenRT = nullptr;
-    }
 }
 
 void GraphicEngine::BeginDraw()
@@ -218,15 +212,11 @@ Render* GraphicEngine::GetRender()
 
 void GraphicEngine::RecreateOffscreenRT(uint32 width, uint32 height)
 {
-    uint32 rtW = std::max<uint32>(1, width);
-    uint32 rtH = std::max<uint32>(1, height);
+	m_pRender->SetNeedsResizeRT();
 
-    if (m_pOffscreenRT)
-    {
-        delete m_pOffscreenRT;
-        m_pOffscreenRT = nullptr;
-    }
+	WindowResizeInfo resizeInfo = {};
+	resizeInfo.width = width;
+	resizeInfo.height = height;
 
-    m_pOffscreenRT = new RenderTarget(m_pRender->GetRenderResources(), rtW, rtH);
-    m_pRender->SetOffscreenRenderTarget(m_pOffscreenRT);
+	m_pRender->SetResizeRT(resizeInfo);
 }

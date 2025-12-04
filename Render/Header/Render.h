@@ -15,6 +15,14 @@ class Material;
 
 struct CameraCB;
 
+
+
+struct WindowResizeInfo
+{
+	uint32 width;
+	uint32 height;
+};
+
 class Render
 {
 public:
@@ -29,12 +37,26 @@ public:
 
 	RenderResources* GetRenderResources();
 
+	void SetNeedsResizeWindow() { m_needsResizeWindow = true; }
+	void SetResizeWindow(WindowResizeInfo resize) { m_resizeInfo = resize; }
+
+	void SetNeedsResizeRT() { m_needsResizeRT = true; }
+	void SetResizeRT(WindowResizeInfo resize) { m_resizeRTInfo = resize; }
+
+private:
+	void ResizeWindow();
+
 private:
 	RenderResources* m_pRenderResources = nullptr;
 
     RenderTarget* m_pOffscreenRT = nullptr;
 
 	UploadBuffer<CameraCB>* m_pCbCurrentViewProjInstance;
+
+	bool m_needsResizeWindow = false;
+	WindowResizeInfo m_resizeInfo = {};
+	bool m_needsResizeRT = false;
+	WindowResizeInfo m_resizeRTInfo = {};
 
 	friend class GraphicEngine;
 };

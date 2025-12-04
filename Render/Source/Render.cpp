@@ -30,6 +30,12 @@ Render::~Render()
 		delete m_pRenderResources;
 		m_pRenderResources = nullptr;
 	}
+
+    if (m_pOffscreenRT)
+    {
+        delete m_pOffscreenRT;
+        m_pOffscreenRT = nullptr;
+    }
 }
 
 void Render::Clear()
@@ -150,9 +156,38 @@ void Render::Display()
     m_pRenderResources->ExecuteCommandList();
     m_pRenderResources->Present(false);
     m_pRenderResources->WaitForGpu();
+
+    ResizeWindow();
+
 }
 
 RenderResources* Render::GetRenderResources()
 {
 	return m_pRenderResources;
+}
+
+void Render::ResizeWindow()
+{
+    if (m_needsResizeWindow)
+    {
+		m_needsResizeWindow = false;
+
+		m_pRenderResources->Resize(m_resizeInfo.width, m_resizeInfo.height);
+    }
+    if (m_needsResizeRT)
+    {
+		m_needsResizeRT = false;
+
+		m_pRenderResources->WaitForGpu();
+
+        if (m_pOffscreenRT)
+        {
+            delete m_pOffscreenRT;
+            m_pOffscreenRT = nullptr;
+        }
+
+        m_pOffscreenRT = new RenderTarget(GetRenderResources(), m_resizeRTInfo.width, m_resizeRTInfo.height);
+
+        SetOffscreenRenderTarget(m_pOffscreenRT);
+    }
 }
