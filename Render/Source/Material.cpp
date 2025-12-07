@@ -8,9 +8,20 @@
 Material::Material(Render* pRender) :
 	m_pRender(pRender),
 	m_uploadBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1),
+	m_uploadMaterialBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1),
 	m_pTexture(nullptr)
 {
-	m_uploadBuffer.GetResource()->SetName(L"MaterialUBuffer");
+	m_uploadBuffer.GetResource()->SetName(L"MaterialWorldUBuffer");
+    m_uploadMaterialBuffer.GetResource()->SetName(L"MaterialPropertiesUBuffer");
+
+    m_materialData = {};
+	m_materialData.ambientColor = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	m_materialData.diffuseColor = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	m_materialData.specularColor = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	m_materialData.shininess = 32.0f;
+	m_materialData.roughness = 0.5f;
+	m_materialData.metallic = 0.0f;
+	m_materialData.emmisiveStrength = 0.0f;
 }
 
 Material::~Material()
@@ -35,13 +46,19 @@ void Material::UpdateWorldConstantBuffer(DirectX::XMMATRIX const& matrix)
     m_uploadBuffer.CopyData(0, dataCb);
 }
 
+void Material::UpdateMaterialConstantBuffer()
+{
+	std::lock_guard<std::mutex> lock(m_uploadMutex);
+	m_uploadMaterialBuffer.CopyData(0, m_materialData);
+}
+
 void Material::SetTexture(Texture* pTexture, bool fromCache)
 {
 	m_pTexture = pTexture;
 	m_isInCache = !fromCache;
 }
 
-bool Material::UpdateTexture(int16 position, ID3D12GraphicsCommandList* cmd)
+bool Material::UpdateTexture(int16 materialPosition, int16 materialPropertiesPosition, ID3D12GraphicsCommandList* cmd)
 {
     if (m_pTexture == nullptr) return false;
 
@@ -54,11 +71,18 @@ bool Material::UpdateTexture(int16 position, ID3D12GraphicsCommandList* cmd)
     }
 
     std::lock_guard<std::mutex> lock(m_uploadMutex);
-    cmd->SetGraphicsRootDescriptorTable((UINT)position, m_pTexture->GetTextureAddress());
+    cmd->SetGraphicsRootDescriptorTable((UINT)materialPosition, m_pTexture->GetTextureAddress());
+    cmd->SetGraphicsRootConstantBufferView((UINT)materialPropertiesPosition, m_uploadMaterialBuffer.GetResource()->GetGPUVirtualAddress());
     return true;
 }
 
 Texture* Material::GetTexture()
 {
 	return m_pTexture;
+}
+
+void Material::SetMaterialData(const MaterialData& data)
+{
+	std::lock_guard<std::mutex> lock(m_uploadMutex);
+	m_materialData = data;
 }

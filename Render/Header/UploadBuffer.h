@@ -16,6 +16,7 @@ struct CB
 {
     DirectX::XMFLOAT3 pos;
     DirectX::XMFLOAT4 color;
+	int padding[1];
 };
 
 struct CameraCB : ConstantBuffer
@@ -27,6 +28,17 @@ struct CameraCB : ConstantBuffer
 struct ObjectData : ConstantBuffer
 {
     DirectX::XMFLOAT4X4 world;
+};
+
+struct MaterialData : ConstantBuffer
+{
+	DirectX::XMFLOAT4 ambientColor;
+	DirectX::XMFLOAT4 diffuseColor;
+	DirectX::XMFLOAT4 specularColor;
+	float shininess;
+	float roughness;
+	float metallic;
+	float emmisiveStrength;
 };
 
 template<typename T>

@@ -88,6 +88,7 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
 
     // Upload matrices
     pMaterial->UpdateWorldConstantBuffer(DirectX::XMLoadFloat4x4(&objectWorldMatrix));
+    pMaterial->UpdateMaterialConstantBuffer();
 
     // VB / IB
     auto vb = pMesh->GetVertexBuffer();
@@ -96,7 +97,7 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
     cmd->IASetIndexBuffer(&ib);
 
     // SRV t2
-    pMaterial->UpdateTexture(2);
+    pMaterial->UpdateTexture(2, 3);
 
     // CBV root params
     cmd->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());

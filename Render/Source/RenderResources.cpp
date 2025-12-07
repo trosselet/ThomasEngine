@@ -641,7 +641,7 @@ void RenderResources::CreateCommandAllocator(ID3D12Device* pDevice)
 
 void RenderResources::CreateRootSignature(ID3D12Device* pDevice)
 {
-	D3D12_ROOT_PARAMETER rootParameters[3] = {};
+	D3D12_ROOT_PARAMETER rootParameters[4] = {};
 
 	//////////////////////////////
 	// cbPass to b0 (View/Proj) //
@@ -675,6 +675,16 @@ void RenderResources::CreateRootSignature(ID3D12Device* pDevice)
 	rootParameters[2].DescriptorTable.pDescriptorRanges = &srvRange;
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+
+	///////////////////////////////
+	// Material Properties to b2 //
+	///////////////////////////////
+	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[3].Descriptor.ShaderRegister = 2; // b2
+	rootParameters[3].Descriptor.RegisterSpace = 0;
+	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+
 	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D12_FILTER_ANISOTROPIC;
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -691,7 +701,7 @@ void RenderResources::CreateRootSignature(ID3D12Device* pDevice)
 	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
-	rootDesc.NumParameters = 3;
+	rootDesc.NumParameters = 4;
 	rootDesc.pParameters = rootParameters;
 	rootDesc.NumStaticSamplers = 1;
 	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerDesc };
