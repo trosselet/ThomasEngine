@@ -10,7 +10,7 @@ GameObject::GameObject(Scene& scene):
 
     if (m_pScene->m_gameObjectsIDs.empty())
     {
-        m_id = (uint32)m_pScene->m_gameObjectsIDs.size();
+        m_id = (uint32)m_pScene->m_gameObjects.size();
         m_pScene->m_gameObjects.push_back(this);
     }
     else
@@ -19,6 +19,7 @@ GameObject::GameObject(Scene& scene):
         m_pScene->m_gameObjectsIDs.pop_back();
         m_pScene->m_gameObjects[m_id] = this;
     }
+
     m_pScene->m_gameObjectsToCreate.push_back(this);
 
 }

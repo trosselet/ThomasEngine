@@ -32,7 +32,7 @@ void CameraMovement::OnFixedUpdate()
     bool D = GetAsyncKeyState('D') & 0x8000;
     bool A = GetAsyncKeyState('A') & 0x8000;
     bool E = GetAsyncKeyState('E') & 0x8000;
-    bool M = GetAsyncKeyState('M') & 0x8000;
+    bool N = GetAsyncKeyState('N') & 0x8000;
 
     bool LEFT = GetAsyncKeyState(VK_LEFT) & 0x8000;
     bool RIGHT = GetAsyncKeyState(VK_RIGHT) & 0x8000;
@@ -48,7 +48,6 @@ void CameraMovement::OnFixedUpdate()
     const float moveSpeed = cameraSpeed;
     const float rotSpeed = 0.02f;
 
-    // Déplacement
     if (Z) t.OffsetPosition((f * moveSpeed).ToXMFLOAT3());
     if (S) t.OffsetPosition((f * -moveSpeed).ToXMFLOAT3());
     if (D) t.OffsetPosition((r * moveSpeed).ToXMFLOAT3());
@@ -65,4 +64,23 @@ void CameraMovement::OnFixedUpdate()
     mPitch = std::clamp(mPitch, -limit, limit);
 
     t.SetCameraRotation(mYaw, mPitch);
+
+    static std::chrono::steady_clock::time_point lastCameraSwitch;
+    static constexpr float cameraSwitchCooldown = 0.5f;
+
+    auto now = std::chrono::steady_clock::now();
+    float elapsed = std::chrono::duration<float>(now - lastCameraSwitch).count();
+
+    if (N && elapsed >= cameraSwitchCooldown)
+    {
+        Utils::DebugLog(GameManager::GetActiveScene().GetMainCamera()->GetId(), ", Owner ID: ", m_pOwner->GetId());
+        Utils::DebugLog("Camera Position: ", m_pOwner->transform.GetPositionFLOAT().x, " ", m_pOwner->transform.GetPositionFLOAT().y, " ", m_pOwner->transform.GetPositionFLOAT().z);
+
+        if (GameManager::GetActiveScene().GetMainCamera()->GetId() != m_pOwner->GetId())
+        {
+            lastCameraSwitch = now;
+
+            GameManager::GetActiveScene().SetMainCamera(m_pOwner);
+        }
+    }
 }

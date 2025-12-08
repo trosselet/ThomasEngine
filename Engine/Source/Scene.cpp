@@ -13,7 +13,8 @@ Scene::~Scene()
 {
     for (GameObject* pGameObject : m_gameObjects)
     {
-        pGameObject->Destroy();
+		if (pGameObject != nullptr)
+            pGameObject->Destroy();
     }
 
     HandleDestruction();
@@ -78,6 +79,11 @@ GameObject const* Scene::GetMainCamera() const
 GameObject* Scene::GetMainCamera()
 {
     return m_pMainCamera;
+}
+
+void Scene::SetMainCamera(GameObject* const pCamera)
+{
+	m_pMainCamera = pCamera;
 }
 
 std::vector<GameObject*> const& Scene::GetGameObjects() const
@@ -151,9 +157,9 @@ void Scene::HandleDestruction()
 
     for (GameObject* const pGameObject : m_gameObjectsToDelete)
     {
-        m_gameObjectsIDs.push_back(pGameObject->m_id);
-        m_gameObjects.erase(m_gameObjects.begin() + pGameObject->m_id);
-        delete pGameObject;
+        m_gameObjects[pGameObject->m_id] = nullptr;    
+        m_gameObjectsIDs.push_back(pGameObject->m_id); 
+        delete pGameObject;                            
     }
     m_gameObjectsToDelete.clear();
 

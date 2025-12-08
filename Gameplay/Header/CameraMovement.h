@@ -17,6 +17,9 @@ private:
 	float cameraSpeed;
 	float mYaw = 0.0f;
 	float mPitch = 0.0f;
+
+	std::chrono::steady_clock::time_point lastCameraSwitch;
+	float cameraSwitchCooldown = 0.5f;
 };
 
 

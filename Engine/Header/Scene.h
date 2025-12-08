@@ -24,6 +24,7 @@ public:
 
 	GameObject const* GetMainCamera() const;
 	GameObject* GetMainCamera();
+	void SetMainCamera(GameObject* const pCamera);
 
 	std::vector<GameObject*> const& GetGameObjects() const;
 	std::vector<MeshRenderer*> const& GetMeshRenderers() const;
