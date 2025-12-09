@@ -94,23 +94,47 @@ void Mesh::UploadGeometry(bool deferred)
 
         if (hasColor)
         {
-            geometryData.push_back(m_pGeometry->colors[i].x);
-            geometryData.push_back(m_pGeometry->colors[i].y);
-            geometryData.push_back(m_pGeometry->colors[i].z);
-            geometryData.push_back(m_pGeometry->colors[i].w);
+			if (i >= m_pGeometry->colors.size())
+            {
+                geometryData.push_back(1.0f);
+                geometryData.push_back(1.0f);
+                geometryData.push_back(1.0f);
+                geometryData.push_back(1.0f);
+            }
+            else
+            {
+                geometryData.push_back(m_pGeometry->colors[i].x);
+                geometryData.push_back(m_pGeometry->colors[i].y);
+                geometryData.push_back(m_pGeometry->colors[i].z);
+                geometryData.push_back(m_pGeometry->colors[i].w);
+            }
         }
 
         if (hasUv)
         {
-            geometryData.push_back(m_pGeometry->UVs[i].x);
-            geometryData.push_back(m_pGeometry->UVs[i].y);
+            if (i >= m_pGeometry->UVs.size())
+            {
+				continue;
+            }
+            else
+            {
+                geometryData.push_back(m_pGeometry->UVs[i].x);
+                geometryData.push_back(m_pGeometry->UVs[i].y);
+            }
         }
 
         if (hasNormal)
         {
-            geometryData.push_back(m_pGeometry->normals[i].x);
-            geometryData.push_back(m_pGeometry->normals[i].y);
-            geometryData.push_back(m_pGeometry->normals[i].z);
+            if (i >= m_pGeometry->normals.size())
+            {
+                continue;
+            }
+            else
+            {
+                geometryData.push_back(m_pGeometry->normals[i].x);
+                geometryData.push_back(m_pGeometry->normals[i].y);
+                geometryData.push_back(m_pGeometry->normals[i].z);
+            }
         }
     }
 

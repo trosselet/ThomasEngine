@@ -2,6 +2,8 @@
 #include <Engine/Header/MeshRenderer.h>
 #include <Engine/Header/RenderSystem.h>
 #include <Engine/Header/GameManager.h>
+#include <Engine/Header/GameObject.h>
+#include <Engine/Header/Scene.h>
 
 #include <Render/Header/Geometry.h>
 #include <Render/Header/PrimitiveGeometry.h>
@@ -9,6 +11,7 @@
 #include <Render/Header/Material.h>
 #include <Render/Header/GraphicEngine.h>
 #include <Render/Header/Window.h>
+#include <Render/Header/ObjModel.h>
 
 
 #include <Tools/Header/Color.h>
@@ -134,41 +137,93 @@ void MeshRenderer::SetMeshFile(const char* objPath, const char* texturePath)
 	SetMeshFileInternal(objPath, texturePath);
 }
 
-void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* texturePath)
+void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultTexturePath)
 {
 	Free();
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 
 	std::string extension = std::filesystem::path(objPath).extension().string();
-
 	std::string geomKey = extension + ":" + objPath;
-	m_pGeometry = graphics.m_geometryCache.GetOrLoad(geomKey, [&]()->Geometry*
-		{
-			return graphics.CreateGeometryFromFile(objPath, extension.c_str());
+
+	// Charger le modèle
+	ObjModel* pObjModel = graphics.m_objCache.GetOrLoad(geomKey, [&]() -> ObjModel* {
+		return graphics.CreateGeometryFromFile(objPath, extension.c_str());
 		});
+
+	if (!pObjModel || pObjModel->subMeshes.empty())
+		return;
+
+	GameObject* pParentObj = m_pOwner;
+
+	// Premier subMesh sur ce MeshRenderer
+	ObjSubMesh& firstSubMesh = pObjModel->subMeshes[0];
+	m_pGeometry = firstSubMesh.geometry;
 	m_ownsGeometry = false;
 
-	std::string textureExtension = std::filesystem::path(texturePath).extension().string();
-	std::string texPath = std::string(texturePath);
-	std::string texKey = std::string("tex:") + texturePath;
-	Texture* pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]()->Texture*
-		{
-			return graphics.CreateTexture(texPath, textureExtension.c_str());
-		});
-	m_ownsMaterial = false;
+	Texture* pTexture = firstSubMesh.texture;
+	if (!pTexture && defaultTexturePath)
+	{
+		std::string texExt = std::filesystem::path(defaultTexturePath).extension().string();
+		std::string texKey = "tex:" + std::string(defaultTexturePath);
+		std::string texPath = std::string(defaultTexturePath);
 
-	std::string meshKey = geomKey + std::string("_mesh");
-	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]()->Mesh*
-		{
-			return graphics.CreateMeshDeferred(m_pGeometry);
+		pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]() -> Texture* {
+			return graphics.CreateTexture(texPath, texExt.c_str());
+			});
+	}
+
+	std::string meshKey = geomKey + "_mesh0";
+	m_pMesh = graphics.m_meshCache.GetOrLoad(meshKey, [&]() -> Mesh* {
+		return graphics.CreateMeshDeferred(m_pGeometry);
 		});
 	m_ownsMesh = false;
 
 	m_pMaterial = graphics.CreateMaterial();
-	m_pMaterial->SetTexture(pTexture, m_ownsMaterial);
+	if (pTexture)
+		m_pMaterial->SetTexture(pTexture, m_ownsMaterial);
 
 	m_primitive = true;
+
+	for (size_t i = 1; i < pObjModel->subMeshes.size(); ++i)
+	{
+		ObjSubMesh& subMesh = pObjModel->subMeshes[i];
+
+		GameObject* pChildObj = new GameObject(pParentObj->GetScene());
+		pChildObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+		pChildObj->transform.SetParent(&pParentObj->transform);
+
+		MeshRenderer& childMR = pChildObj->AddComponent<MeshRenderer>();
+		childMR.m_pGeometry = subMesh.geometry;
+		childMR.m_ownsGeometry = false;
+
+		Texture* childTexture = subMesh.texture;
+		if (!childTexture && defaultTexturePath)
+		{
+			std::string texExt = std::filesystem::path(defaultTexturePath).extension().string();
+			std::string texKey = "tex:" + std::string(defaultTexturePath);
+			std::string texPath = std::string(defaultTexturePath);
+
+			childTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]() -> Texture* {
+				return graphics.CreateTexture(texPath, texExt.c_str());
+				});
+		}
+
+		std::string childMeshKey = geomKey + "_mesh" + std::to_string(i);
+		childMR.m_pMesh = graphics.m_meshCache.GetOrLoad(childMeshKey, [&]() -> Mesh* {
+			return graphics.CreateMeshDeferred(childMR.m_pGeometry);
+			});
+		childMR.m_ownsMesh = false;
+
+		childMR.m_pMaterial = graphics.CreateMaterial();
+		if (childTexture)
+			childMR.m_pMaterial->SetTexture(childTexture, childMR.m_ownsMaterial);
+
+		childMR.m_primitive = true;
+		pChildObj->SetName(("Child_" + std::to_string(i)).c_str());
+	}
 }
+
+
 
 void MeshRenderer::SetColor(Color c)
 {

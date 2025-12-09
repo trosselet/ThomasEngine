@@ -15,6 +15,7 @@
 #include <Render/Header/ObjFactory.h>
 #include <Render/Header/FbxFactory.h>
 #include <Render/Header/UploadBuffer.h>
+#include <Render/Header/ObjModel.h>
 
 GraphicEngine::GraphicEngine(const Window* pWindow)
 {
@@ -78,7 +79,7 @@ Geometry* GraphicEngine::CreatePrimitiveGeometry(PrimitiveGeometryType primitive
 	return pResult;
 }
 
-Geometry* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char* extension, Color color)
+ObjModel* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char* extension, Color color)
 {
 	if (strcmp(extension, ".obj") == 0)
 		return ObjFactory::LoadObjFile(meshPath, color);

@@ -73,10 +73,18 @@ public:
 
     void Reset();
 
+    void SetParent(TRANSFORM* parent);
+    TRANSFORM* GetParent() const { return m_pParent; }
+    const std::vector<TRANSFORM*>& GetChildren() const { return m_children; }
+
 
 private:
     float mYaw = 0.0f;
     float mPitch = 0.0f;
+
+    TRANSFORM* m_pParent = nullptr;
+    std::vector<TRANSFORM*> m_children;
+
 };
 
 #endif // !TRANSFORM_INCLUDE__H

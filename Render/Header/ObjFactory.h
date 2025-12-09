@@ -4,13 +4,13 @@
 #include <vector>
 #include <string>
 
-struct Geometry;
-class Color;
+struct ObjModel;
+class GraphicEngine;
 
 class ObjFactory
 {
 public:
-	static Geometry* LoadObjFile(const char* filePath, Color color);
+	static ObjModel* LoadObjFile(const char* filePath, Color color);
 };
 
 

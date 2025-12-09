@@ -13,6 +13,7 @@ class Render;
 class RenderTarget;
 
 struct Geometry;
+struct ObjModel;
 enum PrimitiveGeometryType : uint8;
 
 class Mesh;
@@ -30,7 +31,7 @@ public:
 	void Display();
 
 	Geometry* CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color);
-	Geometry* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
+	ObjModel* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
 	Mesh* CreateMesh(Geometry* pGeometry);
 	Material* CreateMaterial();
 	Texture* CreateTexture(std::string& filePath, const char* extension);
@@ -57,6 +58,7 @@ public:
 
 	ResourcesCache<Texture> m_textureCache;
 	ResourcesCache<Geometry> m_geometryCache;
+	ResourcesCache<ObjModel> m_objCache;
 	ResourcesCache<Mesh> m_meshCache;
 
 private:

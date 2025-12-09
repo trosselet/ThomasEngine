@@ -20,5 +20,6 @@ target_include_directories(Render PUBLIC
 
 target_link_libraries(Render PUBLIC Tools)
 
-# DirectX12
 target_link_libraries(Render PUBLIC d3d12 dxgi dxguid)
+
+target_link_libraries(Render PUBLIC assimp)

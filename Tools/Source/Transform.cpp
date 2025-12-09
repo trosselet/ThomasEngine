@@ -335,3 +335,33 @@ void TRANSFORM::Reset()
 
 	mIsUpdated = true;
 }
+
+void TRANSFORM::SetParent(TRANSFORM* parent)
+{
+	if (m_pParent)
+	{
+		auto& siblings = m_pParent->m_children;
+		siblings.erase(std::remove(siblings.begin(), siblings.end(), this), siblings.end());
+	}
+
+	m_pParent = parent;
+
+	if (m_pParent)
+	{
+		m_pParent->m_children.push_back(this);
+	}
+
+	if (m_pParent)
+	{
+		DirectX::XMMATRIX parentMat = m_pParent->GetMatrix();
+		DirectX::XMMATRIX invParentMat = DirectX::XMMatrixInverse(nullptr, parentMat);
+		DirectX::XMMATRIX localMat = GetMatrix() * invParentMat;
+
+		DirectX::XMVECTOR scale, rotQuat, trans;
+		DirectX::XMMatrixDecompose(&scale, &rotQuat, &trans, localMat);
+
+		SetScaling(scale);
+		SetRotationQuaternion(rotQuat);
+		SetPosition(trans);
+	}
+}

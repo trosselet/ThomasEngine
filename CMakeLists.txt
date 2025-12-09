@@ -20,6 +20,18 @@ foreach(OUTPUTCONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${OUTPUT_ROOT}/lib)
 endforeach()
 
+include(FetchContent)
+
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG v5.3.1
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(assimp)
+
+
 add_subdirectory(Tools)
 add_subdirectory(Render)
 add_subdirectory(Engine)

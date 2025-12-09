@@ -77,12 +77,12 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pSkyMeshRendererTest.SetSphere("sky.jpg", Color::White);
     pSky->SetName("Sky");
 
-    /*GameObject* const pObj = new GameObject(scene);
+    GameObject* const pObj = new GameObject(scene);
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
-    pObj->transform.SetScaling(Vector3{ 0.0009f, 0.0009f, 0.0009f });
+    //pObj->transform.SetScaling(Vector3{ 0.0009f, 0.0009f, 0.0009f });
     MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
-    pObjMeshRendererTest.SetMeshFile("Bus.obj", "Bus.dds");
-    pObj->SetName("Obj");*/
+    pObjMeshRendererTest.SetMeshFile("mount.obj", "grass.jpg");
+    pObj->SetName("Obj");
 
     /*GameObject* const pObj1 = new GameObject(scene);
     pObj1->transform.SetPosition({ 5.0f, 0.0f, 0.0f });
