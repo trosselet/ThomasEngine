@@ -45,6 +45,7 @@ GraphicEngine::~GraphicEngine()
 
 	m_textureCache.Release();
 	m_geometryCache.Release();
+	m_objCache.Release();
 	m_meshCache.Release();
 
 	delete m_pRender;

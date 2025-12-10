@@ -79,9 +79,9 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
 
     GameObject* const pObj = new GameObject(scene);
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
-    //pObj->transform.SetScaling(Vector3{ 0.0009f, 0.0009f, 0.0009f });
+    pObj->transform.SetScaling(Vector3{ 0.1f, 0.1f, 0.1f });
     MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
-    pObjMeshRendererTest.SetMeshFile("mount.obj", "grass.jpg");
+    pObjMeshRendererTest.SetMeshFile("Female/Female.obj");
     pObj->SetName("Obj");
 
     /*GameObject* const pObj1 = new GameObject(scene);

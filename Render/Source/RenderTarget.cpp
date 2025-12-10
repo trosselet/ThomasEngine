@@ -137,6 +137,12 @@ RenderTarget::RenderTarget(RenderResources* pResources, uint32_t width, uint32_t
 
 	Utils::DebugLog("RT Viewport = ", m_viewport.Width, ", ", m_viewport.Height);
 
+	m_pColor->SetName(L"RenderTarget Color Resource");
+	if (m_pDepth)
+	{
+		m_pDepth->SetName(L"RenderTarget Depth Resource");
+	}
+
 }
 
 RenderTarget::~RenderTarget()

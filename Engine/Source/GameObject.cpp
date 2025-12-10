@@ -101,3 +101,11 @@ void GameObject::SetName(int8 const* name)
 {
     m_pName = name;
 }
+
+void GameObject::AddChild(GameObject* child)
+{
+	m_pChildren.push_back(child);
+	child->m_pParent = this;
+	child->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+	child->transform.SetParent(&this->transform);
+}

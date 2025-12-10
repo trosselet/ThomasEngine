@@ -49,6 +49,8 @@ public:
 
 	void SetName(int8 const* name);
 
+	void AddChild(GameObject* child);
+
 private:
 	bool m_created = false;
 	bool m_toBeCreated = true;

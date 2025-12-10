@@ -354,8 +354,7 @@ void TRANSFORM::SetParent(TRANSFORM* parent)
 	if (m_pParent)
 	{
 		DirectX::XMMATRIX parentMat = m_pParent->GetMatrix();
-		DirectX::XMMATRIX invParentMat = DirectX::XMMatrixInverse(nullptr, parentMat);
-		DirectX::XMMATRIX localMat = GetMatrix() * invParentMat;
+		DirectX::XMMATRIX localMat = parentMat * GetMatrix();
 
 		DirectX::XMVECTOR scale, rotQuat, trans;
 		DirectX::XMMatrixDecompose(&scale, &rotQuat, &trans, localMat);

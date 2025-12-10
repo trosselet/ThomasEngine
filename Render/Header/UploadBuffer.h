@@ -8,6 +8,8 @@
 #include <wrl/client.h>
 #include <cstring>
 
+#include <Render/Header/ObjModel.h>
+
 struct ConstantBuffer
 {
 };
@@ -39,6 +41,20 @@ struct MaterialData : ConstantBuffer
 	float roughness;
 	float metallic;
 	float emmisiveStrength;
+
+    static MaterialData FromObjMaterial(const ObjMaterial& mat)
+    {
+        MaterialData data = {};
+        data.ambientColor = DirectX::XMFLOAT4(mat.ambientColor.r, mat.ambientColor.g, mat.ambientColor.b, mat.opacity);
+        data.diffuseColor = DirectX::XMFLOAT4(mat.diffuseColor.r, mat.diffuseColor.g, mat.diffuseColor.b, mat.opacity);
+        data.specularColor = DirectX::XMFLOAT4(mat.specularColor.r, mat.specularColor.g, mat.specularColor.b, mat.opacity);
+        data.shininess = mat.shininess;
+        data.roughness = 1.0f - (mat.shininess / 256.0f);
+        data.metallic = 0.0f;
+        data.emmisiveStrength = 0.0f;
+		return data;
+    }
+
 };
 
 template<typename T>

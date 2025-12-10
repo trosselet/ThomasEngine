@@ -23,8 +23,11 @@ public:
     {
         for (auto& p : m_cache)
         {
-            delete p.second;
-            p.second = nullptr;
+			if (p.second)
+            {
+                delete p.second;
+                p.second = nullptr;
+            }
         }
     }
 

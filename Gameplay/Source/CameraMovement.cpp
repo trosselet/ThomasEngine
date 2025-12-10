@@ -8,7 +8,7 @@ constexpr float PIDIV2 = 1.570796327f;
 
 CameraMovement::CameraMovement()
 {
-    cameraSpeed = 0.05f;
+    cameraSpeed = 0.1f;
 }
 
 CameraMovement::~CameraMovement()

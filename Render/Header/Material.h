@@ -4,6 +4,8 @@
 #include <Render/Header/UploadBuffer.h>
 #include <mutex>
 
+struct ObjMaterial;
+
 class Render;
 class Texture;
 
@@ -18,6 +20,8 @@ public:
 	void UpdateMaterialConstantBuffer();
 
 	void SetTexture(Texture* pTexture, bool fromCache = true);
+	void SetNormalTexture(Texture* pTexture, bool fromCache = true);
+	void SetSpecularTexture(Texture* pTexture, bool fromCache = true);
 	bool UpdateTexture(int16 materialPosition, int16 materialPropertiesPosition, ID3D12GraphicsCommandList* cmd = nullptr);
 	Texture* GetTexture();
 
@@ -40,7 +44,9 @@ private:
 	MaterialData m_materialData;
 	std::mutex m_uploadMutex;
 
-	Texture* m_pTexture;
+	Texture* m_pDiffuseTexture;
+	Texture* m_pNormalTexture;
+	Texture* m_pSpecularTexture;
 	Render* m_pRender;
 
 	bool m_isInCache = false;

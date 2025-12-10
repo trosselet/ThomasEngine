@@ -90,16 +90,19 @@ Texture::Texture(std::string& path, GraphicEngine* pGraphic) : m_pTexture(nullpt
 
 Texture::~Texture()
 {
-    if (m_pTextureUploadHeap)
+    if (m_width >= 0 && m_height >= 0)
     {
-        m_pTextureUploadHeap->Release();
-        m_pTextureUploadHeap = nullptr;
-    }
+        if (m_pTextureUploadHeap)
+        {
+            m_pTextureUploadHeap->Release();
+            m_pTextureUploadHeap = nullptr;
+        }
 
-    if (m_pTexture)
-    {
-        m_pTexture->Release();
-        m_pTexture = nullptr;
+        if (m_pTexture)
+        {
+            m_pTexture->Release();
+            m_pTexture = nullptr;
+        }
     }
 }
 

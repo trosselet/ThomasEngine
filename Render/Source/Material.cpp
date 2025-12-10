@@ -9,7 +9,9 @@ Material::Material(Render* pRender) :
 	m_pRender(pRender),
 	m_uploadBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1),
 	m_uploadMaterialBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1),
-	m_pTexture(nullptr)
+	m_pDiffuseTexture(nullptr),
+	m_pNormalTexture(nullptr),
+	m_pSpecularTexture(nullptr)
 {
 	m_uploadBuffer.GetResource()->SetName(L"MaterialWorldUBuffer");
     m_uploadMaterialBuffer.GetResource()->SetName(L"MaterialPropertiesUBuffer");
@@ -26,10 +28,20 @@ Material::Material(Render* pRender) :
 
 Material::~Material()
 {
- 	if (m_pTexture && !m_isInCache)
+ 	if (m_pDiffuseTexture && !m_isInCache)
 	{
-		delete m_pTexture;
-		m_pTexture = nullptr;
+		delete m_pDiffuseTexture;
+		m_pDiffuseTexture = nullptr;
+	}
+ 	if (m_pNormalTexture && !m_isInCache)
+	{
+		delete m_pNormalTexture;
+		m_pNormalTexture = nullptr;
+	}
+ 	if (m_pSpecularTexture && !m_isInCache)
+	{
+		delete m_pSpecularTexture;
+		m_pSpecularTexture = nullptr;
 	}
 }
 
@@ -54,13 +66,23 @@ void Material::UpdateMaterialConstantBuffer()
 
 void Material::SetTexture(Texture* pTexture, bool fromCache)
 {
-	m_pTexture = pTexture;
+	m_pDiffuseTexture = pTexture;
 	m_isInCache = !fromCache;
+}
+
+void Material::SetNormalTexture(Texture* pTexture, bool fromCache)
+{
+	m_pNormalTexture = pTexture;
+}
+
+void Material::SetSpecularTexture(Texture* pTexture, bool fromCache)
+{
+	m_pSpecularTexture = pTexture;
 }
 
 bool Material::UpdateTexture(int16 materialPosition, int16 materialPropertiesPosition, ID3D12GraphicsCommandList* cmd)
 {
-    if (m_pTexture == nullptr) return false;
+    if (m_pDiffuseTexture == nullptr) return false;
 
     if (cmd == nullptr)
     {
@@ -71,14 +93,16 @@ bool Material::UpdateTexture(int16 materialPosition, int16 materialPropertiesPos
     }
 
     std::lock_guard<std::mutex> lock(m_uploadMutex);
-    cmd->SetGraphicsRootDescriptorTable((UINT)materialPosition, m_pTexture->GetTextureAddress());
+
+	cmd->SetGraphicsRootDescriptorTable(materialPosition, m_pDiffuseTexture->GetTextureAddress());
+
     cmd->SetGraphicsRootConstantBufferView((UINT)materialPropertiesPosition, m_uploadMaterialBuffer.GetResource()->GetGPUVirtualAddress());
     return true;
 }
 
 Texture* Material::GetTexture()
 {
-	return m_pTexture;
+	return m_pDiffuseTexture;
 }
 
 void Material::SetMaterialData(const MaterialData& data)

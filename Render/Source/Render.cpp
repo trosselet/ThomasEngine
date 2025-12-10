@@ -25,17 +25,18 @@ Render::~Render()
 		m_pCbCurrentViewProjInstance = nullptr;
 	}
 
+    if (m_pOffscreenRT)
+    {
+        delete m_pOffscreenRT;
+        m_pOffscreenRT = nullptr;
+    }
+
 	if (m_pRenderResources)
 	{
 		delete m_pRenderResources;
 		m_pRenderResources = nullptr;
 	}
 
-    if (m_pOffscreenRT)
-    {
-        delete m_pOffscreenRT;
-        m_pOffscreenRT = nullptr;
-    }
 }
 
 void Render::Clear()
