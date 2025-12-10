@@ -30,14 +30,14 @@ ObjModel* ObjFactory::LoadObjFile(const char* filePath, Color color)
     if (!scene || !scene->HasMeshes())
         return nullptr;
 
-    ObjModel* model = new ObjModel();
+    ObjModel* model = NEW ObjModel();
 
     for (unsigned int m = 0; m < scene->mNumMeshes; ++m)
     {
         aiMesh* mesh = scene->mMeshes[m];
         ObjSubMesh subMesh;
 
-        Geometry* geom = new Geometry();
+        Geometry* geom = NEW Geometry();
         geom->positions.reserve(mesh->mNumVertices);
         geom->UVs.reserve(mesh->mNumVertices);
         geom->normals.reserve(mesh->mNumVertices);

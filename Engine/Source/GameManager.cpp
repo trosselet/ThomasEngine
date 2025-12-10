@@ -7,9 +7,9 @@
 #include <Render/Header/Window.h>
 
 GameManager::GameManager(HINSTANCE hInstance) :
-	m_pWindow(new Window(hInstance)),
-	m_pRenderSystem(new RenderSystem(m_pWindow->GetGraphicEngine())),
-	m_pScriptSystem(new ScriptSystem())
+	m_pWindow(NEW Window(hInstance)),
+	m_pRenderSystem(NEW RenderSystem(m_pWindow->GetGraphicEngine())),
+	m_pScriptSystem(NEW ScriptSystem())
 {
 	m_lastTime = std::chrono::steady_clock::now();
 }
@@ -52,7 +52,7 @@ void GameManager::Initialize(HINSTANCE hInstance)
 		return;
 	}
 
-	m_pInstance = new GameManager(hInstance);
+	m_pInstance = NEW GameManager(hInstance);
 }
 
 void GameManager::Run()

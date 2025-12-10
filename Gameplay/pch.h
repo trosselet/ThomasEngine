@@ -1,6 +1,8 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+
 
 #include <Tools/pch.h>
 #include <Engine/pch.h>

@@ -11,10 +11,10 @@
 
 Render::Render(const Window* pWindow)
 {
-	m_pRenderResources = new RenderResources(pWindow->GetHWND(), pWindow->GetWidth(), pWindow->GetHeight());
+	m_pRenderResources = NEW RenderResources(pWindow->GetHWND(), pWindow->GetWidth(), pWindow->GetHeight());
 	m_pRenderResources->Resize(pWindow->GetWidth(), pWindow->GetHeight());
 
-	m_pCbCurrentViewProjInstance = new UploadBuffer<CameraCB>(m_pRenderResources->GetDevice(), 1, 1);
+	m_pCbCurrentViewProjInstance = NEW UploadBuffer<CameraCB>(m_pRenderResources->GetDevice(), 1, 1);
 }
 
 Render::~Render()
@@ -188,7 +188,7 @@ void Render::ResizeWindow()
             m_pOffscreenRT = nullptr;
         }
 
-        m_pOffscreenRT = new RenderTarget(GetRenderResources(), m_resizeRTInfo.width, m_resizeRTInfo.height);
+        m_pOffscreenRT = NEW RenderTarget(GetRenderResources(), m_resizeRTInfo.width, m_resizeRTInfo.height);
 
         SetOffscreenRenderTarget(m_pOffscreenRT);
     }

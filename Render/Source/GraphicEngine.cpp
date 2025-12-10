@@ -19,8 +19,8 @@
 
 GraphicEngine::GraphicEngine(const Window* pWindow)
 {
-	m_pRender = new Render(pWindow);
-    m_pOffscreenRT = new RenderTarget(m_pRender->GetRenderResources(), pWindow->GetWidth(), pWindow->GetHeight());
+	m_pRender = NEW Render(pWindow);
+    m_pOffscreenRT = NEW RenderTarget(m_pRender->GetRenderResources(), pWindow->GetWidth(), pWindow->GetHeight());
     m_pRender->SetOffscreenRenderTarget(m_pOffscreenRT);
 	PrimitiveGeometry::InitializeGeometry();
 }
@@ -69,7 +69,7 @@ void GraphicEngine::Display()
 Geometry* GraphicEngine::CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color)
 {
 	Geometry const* const pGeo = PrimitiveGeometry::GetPrimitiveGeometry(primitiveType);
-	Geometry* pResult = new Geometry();
+	Geometry* pResult = NEW Geometry();
 	*pResult = *pGeo;
 
 	for (int i = 0; i < pResult->positions.size(); i++)
@@ -93,7 +93,7 @@ ObjModel* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char
 Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)
 {
 	m_pRender->GetRenderResources()->ResetCommandList();
-	Mesh* mesh = new Mesh(pGeometry, m_pRender);
+	Mesh* mesh = NEW Mesh(pGeometry, m_pRender);
 	m_pRender->GetRenderResources()->GetCommandList()->Close();
 	m_pRender->GetRenderResources()->ExecuteCommandList();
 	m_pRender->GetRenderResources()->FlushQueue();
@@ -103,7 +103,7 @@ Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)
 
 Material* GraphicEngine::CreateMaterial()
 {
-	return new Material(m_pRender);
+	return NEW Material(m_pRender);
 }
 
 Texture* GraphicEngine::CreateTexture(std::string& filePath, const char* extension)
@@ -114,11 +114,11 @@ Texture* GraphicEngine::CreateTexture(std::string& filePath, const char* extensi
 
 	if (strcmp(extension, ".dds") == 0)
 	{
-		pTexture = new Texture(filePath.c_str(), this);
+		pTexture = NEW Texture(filePath.c_str(), this);
 	}
 	else
 	{
-		pTexture = new Texture(filePath, this);
+		pTexture = NEW Texture(filePath, this);
 	}
 
 	m_pRender->GetRenderResources()->GetCommandList()->Close();
@@ -192,7 +192,7 @@ void GraphicEngine::UpdateCameraTo(Vector3 const& position, Vector3 const& targe
 
 Mesh* GraphicEngine::CreateMeshDeferred(Geometry* pGeometry)
 {
-	Mesh* mesh = new Mesh(pGeometry, m_pRender, true);
+	Mesh* mesh = NEW Mesh(pGeometry, m_pRender, true);
 	m_pendingMeshUploads.push_back(mesh);
 	return mesh;
 }

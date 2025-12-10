@@ -165,12 +165,16 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultT
 		}
 	);
 
+	m_ownsGeometry = false;
+
 	if (!pObjModel || pObjModel->subMeshes.empty())
 		return;
 
 	GameObject* pParentObj = m_pOwner;
 	ObjSubMesh& firstSubMesh = pObjModel->subMeshes[0];
-	m_pGeometry = firstSubMesh.geometry; m_ownsGeometry = false;
+	
+	m_pGeometry = firstSubMesh.geometry;
+	
 	Texture* pTexture = nullptr;
 	
 	if (!firstSubMesh.material.diffuseTexturePath.empty())
@@ -238,7 +242,7 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultT
 	for (size_t i = 1; i < pObjModel->subMeshes.size(); ++i)
 	{ 
 		ObjSubMesh& subMesh = pObjModel->subMeshes[i];
-		GameObject* pChildObj = new GameObject(pParentObj->GetScene());
+		GameObject* pChildObj = NEW GameObject(pParentObj->GetScene());
 		pParentObj->AddChild(pChildObj);
 		MeshRenderer& childMR = pChildObj->AddComponent<MeshRenderer>();
 		
@@ -414,7 +418,7 @@ void MeshRenderer::Free()
 		delete m_pGeometry;
 	}
 
-	if (m_pMaterial)
+	if (m_pMaterial && m_ownsMaterial)
 	{
 		delete m_pMaterial;
 	}

@@ -17,13 +17,13 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     scene.Load();
     scene.SetActive();
 
-    GameObject* const pMainCamera = new GameObject(scene);
+    GameObject* const pMainCamera = NEW GameObject(scene);
     pMainCamera->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     Camera& cameraComponent = pMainCamera->AddComponent<Camera>();
     pMainCamera->SetName("Camera");
     pMainCamera->AddScript<CameraMovement>();
     
-    GameObject* const pSecondCamera = new GameObject(scene);
+    GameObject* const pSecondCamera = NEW GameObject(scene);
     pSecondCamera->transform.SetPosition({ 0.0f, 0.0f, 2.0f });
     Camera& secondCameraComponent = pSecondCamera->AddComponent<Camera>();
     MeshRenderer& pCameraMeshRenderer = pSecondCamera->AddComponent<MeshRenderer>();
@@ -33,14 +33,14 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pSecondCamera->SetName("Camera2");
     pSecondCamera->AddScript<CameraMovement>();
 
-    GameObject* const pPlateform = new GameObject(scene);
+    GameObject* const pPlateform = NEW GameObject(scene);
     pPlateform->transform.SetPosition({ 0.0f, -1.0f, 5.0f });
     pPlateform->transform.SetScaling(Vector3{ 10.0f, 0.2f, 10.0f });
     MeshRenderer& pPlateformMeshRenderer = pPlateform->AddComponent<MeshRenderer>();
     pPlateformMeshRenderer.SetCube("grid_placeholder_material.png", Color::White);
     pPlateform->SetName("Plateform");
 
-    GameObject* const pRectangle = new GameObject(scene);
+    GameObject* const pRectangle = NEW GameObject(scene);
     pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
     MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();
     pRectangleMeshRendererTest.SetRectangle(Color::White);
@@ -48,28 +48,28 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
 
     /*for (int i = 0; i < 8000; i++)
     {
-        GameObject* const pSphere1 = new GameObject(scene);
+        GameObject* const pSphere1 = NEW GameObject(scene);
         pSphere1->transform.SetPosition({ 1.5f, 0.0f, 5.0f });
         MeshRenderer& pSphere1MeshRendererTest = pSphere1->AddComponent<MeshRenderer>();
         pSphere1MeshRendererTest.SetSphere(Color::White);
         pSphere1->SetName("Sphere1");
     }*/
    
-    GameObject* const pCircle1 = new GameObject(scene);
+    GameObject* const pCircle1 = NEW GameObject(scene);
     pCircle1->transform.SetPosition({ 3.0f, 0.0f, 5.0f });
     MeshRenderer& pCircle1MeshRendererTest = pCircle1->AddComponent<MeshRenderer>();
     pCircle1MeshRendererTest.SetCircle(Color::White);
     pCircle1MeshRendererTest.SetColor(Color::Blue);;
     pCircle1->SetName("Circle1");
    
-    GameObject* const pCube1 = new GameObject(scene);
+    GameObject* const pCube1 = NEW GameObject(scene);
     pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
     MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
     pCube1MeshRendererTest.SetCube("wood.jpg", Color::White);
     pCube1MeshRendererTest.SetColor(Color::Red);
     pCube1->SetName("Cube");
 
-    GameObject* const pSky = new GameObject(scene);
+    GameObject* const pSky = NEW GameObject(scene);
     pSky->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pSky->transform.RotateCartesian({0.0f, 0.0f, 180.0f});
     pSky->transform.SetScaling(Vector3{ -10000.0f, -10000.0f, -10000.0f });
@@ -77,14 +77,14 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pSkyMeshRendererTest.SetSphere("sky.jpg", Color::White);
     pSky->SetName("Sky");
 
-    GameObject* const pObj = new GameObject(scene);
+    GameObject* const pObj = NEW GameObject(scene);
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pObj->transform.SetScaling(Vector3{ 0.1f, 0.1f, 0.1f });
     MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
     pObjMeshRendererTest.SetMeshFile("Female/Female.obj");
     pObj->SetName("Obj");
 
-    /*GameObject* const pObj1 = new GameObject(scene);
+    /*GameObject* const pObj1 = NEW GameObject(scene);
     pObj1->transform.SetPosition({ 5.0f, 0.0f, 0.0f });
     pObj1->transform.RotateYPR({ 0.0f, 55.0f, 0.0f });
     pObj1->transform.SetScaling(Vector3{ 1.f, 1.f, 1.f });

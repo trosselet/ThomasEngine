@@ -73,7 +73,7 @@ Window::Window(HINSTANCE hInstance, uint32 width, uint32 height, LPCSTR windowTi
 	m_height = height;
 	m_windowTitle = windowTitle;
 	Initialize();
-	m_pGraphic = new GraphicEngine(this);	
+	m_pGraphic = NEW GraphicEngine(this);
 }
 
 bool Window::Initialize()

@@ -77,7 +77,7 @@ template<typename T, typename ...Args>
 inline T* GameObject::AddScript(Args && ...args)
 {
 	static_assert(std::is_base_of<IScript, T>::value, "T must be derived from IScript");
-	T* script = new T(std::forward<Args>(args)...);
+	T* script = NEW T(std::forward<Args>(args)...);
 	script->SetOwner(this);
 	script->OnStart();
 	m_scripts.push_back(script);
@@ -124,7 +124,7 @@ inline MeshRenderer& GameObject::AddComponent<MeshRenderer>()
 {
 	assert(HasComponent<MeshRenderer>() == false);
 
-	MeshRenderer* const pMeshRenderer = new MeshRenderer();
+	MeshRenderer* const pMeshRenderer = NEW MeshRenderer();
 	m_pScene->m_meshRenderers.push_back(pMeshRenderer);
 	pMeshRenderer->m_pOwner = this;
 	m_pScene->m_meshRenderersToCreate.push_back(pMeshRenderer);
@@ -147,7 +147,7 @@ inline Camera& GameObject::AddComponent<Camera>()
 {
 	assert((HasComponent<Camera>() == false));
 
-	Camera* const pCamera = new Camera();
+	Camera* const pCamera = NEW Camera();
 	m_pScene->m_cameras.push_back(pCamera);
 	pCamera->m_pOwner = this;
 	m_pScene->m_camerasToCreate.push_back(pCamera);
