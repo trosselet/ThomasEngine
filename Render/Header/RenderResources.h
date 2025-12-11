@@ -8,18 +8,6 @@
 #include <d3dcommon.h>
 #include <dxgi1_4.h>
 
-#if _EXE
-
-#define SHADER_PATH L"shaders/shader.hlsl"
-#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
-
-#else
-
-#define SHADER_PATH L"shaders/shader.hlsl"
-#define SHADER_PP_PATH L"shaders/postProcess.hlsl"
-
-#endif
-
 
 
 struct IDXGIFactory2;
@@ -57,12 +45,6 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentDSV();
 	ID3D12DescriptorHeap* GetCbvSrvUavDescriptorHeap();
 
-	ID3D12PipelineState* GetPSO();
-	ID3D12PipelineState* GetPostProcessPSO();
-	ID3D12RootSignature* GetRootSignature();
-	ID3D12RootSignature* GetPostProcessRootSignature();
-
-
 	void WaitForGpu();
 
 	void Resize(UINT width, UINT height);
@@ -98,12 +80,7 @@ private:
 	void CreateDescriptorHeap(ID3D12Device* pDevice);
 	void CreateRenderTargets(ID3D12Device* pDevice);
 	void CreateCommandAllocator(ID3D12Device* pDevice);
-	void CreateRootSignature(ID3D12Device* pDevice);
-	ID3DBlob* CompileShader(const std::wstring& path, const char* target);
-	void CreatePipelineState(ID3D12Device* pDevice, const std::wstring& shaderPath);
 	void CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllocator* pcmdAllocator, ID3D12PipelineState* pPso);
-	void CreatePostProcessPSO(ID3D12Device* pDevice, const std::wstring& shaderPath);
-	void CreatePostProcessRootSignature(ID3D12Device* pDevice);
 	void CreateCbvSrvUavDescriptorHeap();
 	void CreateFence(ID3D12Device* pDevice);
 	void UpdateViewport(uint32 width, uint32 height);
@@ -122,12 +99,8 @@ private:
 	ID3D12Resource* m_pRenderTargets[FrameCount];
 	ID3D12CommandAllocator* m_pCommandAllocator = nullptr;
 	ID3D12CommandQueue* m_pCommandQueue = nullptr;
-	ID3D12RootSignature* m_pRootSignature = nullptr;
 	ID3D12DescriptorHeap* m_pRtvHeap = nullptr;
 	ID3D12DescriptorHeap* m_pCbvSrvUavDescriptorHeap = nullptr;
-	ID3D12PipelineState* m_pPipelineState = nullptr;
-	ID3D12PipelineState* m_pPostProcessPSO = nullptr;
-	ID3D12RootSignature* m_pPostProcessRootSignature = nullptr;
 	ID3D12GraphicsCommandList* m_pCommandList = nullptr;
 	ID3D12DescriptorHeap* m_pDsvDescriptorHeap = nullptr;
 	ID3D12Resource* m_pDepthStencil = nullptr;

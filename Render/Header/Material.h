@@ -2,6 +2,7 @@
 #define MATERIAL_INCLUDE__H
 
 #include <Render/Header/UploadBuffer.h>
+#include <Tools/Header/PrimitiveTypes.h>
 #include <mutex>
 
 struct ObjMaterial;
@@ -35,7 +36,10 @@ public:
 	void SetShininess(float shininess) { m_materialData.shininess = shininess; }
 	void SetRoughness(float roughness) { m_materialData.roughness = roughness; }
 	void SetMetallic(float metallic) { m_materialData.metallic = metallic; }
-	
+
+public:
+	void SetPSO(ID3D12PipelineState* pPso) { m_pPso = pPso; };
+	ID3D12PipelineState* GetPSO() { return m_pPso; };
 
 private:
 	UploadBuffer<ObjectData> m_uploadBuffer;
@@ -47,7 +51,9 @@ private:
 	Texture* m_pDiffuseTexture;
 	Texture* m_pNormalTexture;
 	Texture* m_pSpecularTexture;
+
 	Render* m_pRender;
+	ID3D12PipelineState* m_pPso;
 
 	bool m_isInCache = false;
 };

@@ -4,6 +4,7 @@
 #include <Render/Header/RenderResources.h>
 #include <Render/Header/RenderTarget.h>
 #include <Render/Header/Window.h>
+#include <Render/Header/PSOManager.h>
 
 #include <Render/Header/Mesh.h>
 #include <Render/Header/Material.h>
@@ -31,6 +32,11 @@ Render::~Render()
         m_pOffscreenRT = nullptr;
     }
 
+    if (PSOManager::GetInstance())
+    {
+        delete PSOManager::GetInstance();
+    }
+
 	if (m_pRenderResources)
 	{
 		delete m_pRenderResources;
@@ -51,33 +57,29 @@ void Render::Clear()
     m_pOffscreenRT->Transition(cmd, D3D12_RESOURCE_STATE_RENDER_TARGET);
      
 
-	D3D12_VIEWPORT viewport = m_pOffscreenRT->GetViewport();
-	D3D12_RECT scissor = m_pOffscreenRT->GetScissor();
+	D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
+	D3D12_RECT scissor = m_pRenderResources->GetRect();
 
 
     cmd->RSSetViewports(1, &viewport);
     cmd->RSSetScissorRects(1, &scissor);
 
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pOffscreenRT->GetRTV();
-    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pOffscreenRT->GetDSV();
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pRenderResources->GetCurrentRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pRenderResources->GetCurrentDSV();
 
-    cmd->OMSetRenderTargets(1, &rtv, FALSE,
-        m_pOffscreenRT->HasDepth() ? &dsv : nullptr);
+    cmd->OMSetRenderTargets(1, &rtv, FALSE, m_pOffscreenRT->HasDepth() ? &dsv : nullptr);
 
     cmd->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 
     if (m_pOffscreenRT->HasDepth())
     {
-        cmd->ClearDepthStencilView(dsv,
-            D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-            1.0f, 0, 0, nullptr);
+        cmd->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
     }
      
     ID3D12DescriptorHeap* heap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
     cmd->SetDescriptorHeaps(1, &heap);
 
-    cmd->SetPipelineState(m_pRenderResources->GetPSO());
-    cmd->SetGraphicsRootSignature(m_pRenderResources->GetRootSignature());
+    
     cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
@@ -86,6 +88,9 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
     if (!pMesh) return;
 
     ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
+
+    cmd->SetPipelineState(pMaterial->GetPSO());
+    cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
 
     // Upload matrices
     pMaterial->UpdateWorldConstantBuffer(DirectX::XMLoadFloat4x4(&objectWorldMatrix));
@@ -98,11 +103,12 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
     cmd->IASetIndexBuffer(&ib);
 
     // SRV t2
-    pMaterial->UpdateTexture(2, 3);
+    pMaterial->UpdateTexture(3, 2);
 
     // CBV root params
     cmd->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
     cmd->SetGraphicsRootConstantBufferView(1, pMaterial->GetUploadBuffer()->GetResource()->GetGPUVirtualAddress());
+
 
     cmd->DrawIndexedInstanced(pMesh->GetIndexCount(), 1, 0, 0, 0);
 
@@ -139,9 +145,10 @@ void Render::Display()
     ID3D12DescriptorHeap* heap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
     cmd->SetDescriptorHeaps(1, &heap);
 
-    cmd->SetPipelineState(m_pRenderResources->GetPostProcessPSO());
-    cmd->SetGraphicsRootSignature(m_pRenderResources->GetPostProcessRootSignature());
-    cmd->SetGraphicsRootDescriptorTable(0, m_pOffscreenRT->GetSRV());
+    cmd->SetPipelineState(PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl"));
+    cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
+
+    cmd->SetGraphicsRootDescriptorTable(3, m_pOffscreenRT->GetSRV());
     cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     cmd->DrawInstanced(3, 1, 0, 0);

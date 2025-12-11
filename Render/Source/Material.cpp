@@ -3,6 +3,7 @@
 
 #include <Render/Header/Render.h>
 #include <Render/Header/RenderResources.h>
+#include <Render/Header/PSOManager.h>
 #include <Render/Header/Texture.h>
 
 Material::Material(Render* pRender) :
@@ -24,6 +25,9 @@ Material::Material(Render* pRender) :
 	m_materialData.roughness = 0.5f;
 	m_materialData.metallic = 0.0f;
 	m_materialData.emmisiveStrength = 0.0f;
+
+
+	m_pPso = PSOManager::GetInstance()->GetPSO(L"shader.hlsl");
 }
 
 Material::~Material()

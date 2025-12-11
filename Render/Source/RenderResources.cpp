@@ -1,5 +1,6 @@
 #include <Render/pch.h>
-#include <Render/Header/Renderresources.h>
+#include <Render/Header/RenderResources.h>
+#include <Render/Header/PSOManager.h>
 
 
 
@@ -18,10 +19,10 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateDepthStencilResources(width, height);
 	CreateCommandAllocator(m_pDevice);
 
-	CreatePipelineState(m_pDevice, SHADER_PATH);
-	CreatePostProcessPSO(m_pDevice, SHADER_PP_PATH);
-
-	CreateCommandList(m_pDevice, m_pCommandAllocator, m_pPipelineState);
+	PSOManager::Initialize(this);
+	PSOManager::GetInstance()->GetPSO(L"shader.hlsl");
+	PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl");
+	CreateCommandList(m_pDevice, m_pCommandAllocator, PSOManager::GetInstance()->GetPSO(L"shader.hlsl"));
 
     CreateBundles(4);
 }
@@ -127,10 +128,6 @@ RenderResources::~RenderResources()
 	WaitForGpu();
 
 	if (m_pCommandList) { m_pCommandList->Release(); m_pCommandList = nullptr; }
-	if (m_pPipelineState) { m_pPipelineState->Release(); m_pPipelineState = nullptr; }
-	if (m_pPostProcessPSO) { m_pPostProcessPSO->Release(); m_pPostProcessPSO = nullptr; }
-	if (m_pRootSignature) { m_pRootSignature->Release(); m_pRootSignature = nullptr; }
-	if (m_pPostProcessRootSignature) { m_pPostProcessRootSignature->Release(); m_pPostProcessRootSignature = nullptr; }
 	if (m_pCommandAllocator) { m_pCommandAllocator->Release(); m_pCommandAllocator = nullptr; }
 
 	for (uint32 n = 0; n < FrameCount; n++)
@@ -460,21 +457,6 @@ ID3D12DescriptorHeap* RenderResources::GetCbvSrvUavDescriptorHeap()
 	return m_pCbvSrvUavDescriptorHeap;
 }
 
-ID3D12PipelineState* RenderResources::GetPSO()
-{
-	return m_pPipelineState;
-}
-
-ID3D12RootSignature* RenderResources::GetRootSignature()
-{
-	return m_pRootSignature;
-}
-
-ID3D12RootSignature* RenderResources::GetPostProcessRootSignature()
-{
-	return m_pPostProcessRootSignature;
-}
-
 void RenderResources::CreateDXGIFactory()
 {
 #if defined(_DEBUG)
@@ -631,201 +613,12 @@ void RenderResources::CreateRenderTargets(ID3D12Device* pDevice)
 
 void RenderResources::CreateCommandAllocator(ID3D12Device* pDevice)
 {
-	if (SUCCEEDED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator))))
+	if (SUCCEEDED(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator))))
 	{
 		Utils::DebugLog("Command Allocator has been created !");
 		return;
 	}
 	Utils::DebugError("Error while creating the Command Allocator !");
-}
-
-void RenderResources::CreateRootSignature(ID3D12Device* pDevice)
-{
-	D3D12_ROOT_PARAMETER rootParameters[4] = {};
-
-	//////////////////////////////
-	// cbPass to b0 (View/Proj) //
-	//////////////////////////////
-
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[0].Descriptor.ShaderRegister = 0; // b0
-	rootParameters[0].Descriptor.RegisterSpace = 0;
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-	///////////////////////////////
-	// cbPerObject to b1 (World) //
-	///////////////////////////////
-
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[1].Descriptor.ShaderRegister = 1; // b1
-	rootParameters[1].Descriptor.RegisterSpace = 0;
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-	///////////////////////////
-	// Texture to t0, t1, t2 //
-	///////////////////////////
-	D3D12_DESCRIPTOR_RANGE srvRange = {};
-	srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	srvRange.NumDescriptors = 3;    
-	srvRange.BaseShaderRegister = 0;
-	srvRange.RegisterSpace = 0;
-	srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
-	rootParameters[2].DescriptorTable.pDescriptorRanges = &srvRange;
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-
-	///////////////////////////////
-	// Material Properties to b2 //
-	///////////////////////////////
-	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[3].Descriptor.ShaderRegister = 2; // b2
-	rootParameters[3].Descriptor.RegisterSpace = 0;
-	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-
-	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter = D3D12_FILTER_ANISOTROPIC;
-	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 16;
-	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-	samplerDesc.MinLOD = 0.0f;
-	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-	samplerDesc.ShaderRegister = 0;  // s0
-	samplerDesc.RegisterSpace = 0;
-	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
-	rootDesc.NumParameters = 4;
-	rootDesc.pParameters = rootParameters;
-	rootDesc.NumStaticSamplers = 1;
-	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerDesc };
-	rootDesc.pStaticSamplers = samplers;
-	rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-	ID3DBlob* signature = nullptr;
-	ID3DBlob* error = nullptr;
-
-	HRESULT hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
-	if (FAILED(hr))
-	{
-		if (error)
-			Utils::DebugError("Root Signature Serialize Error: ", (const char*)error->GetBufferPointer());
-	}
-	else
-	{
-		hr = m_pDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature));
-		if (FAILED(hr))
-			Utils::DebugError("Error creating Root Signature!");
-		else
-			Utils::DebugLog("Root Signature created with CBVs !");
-	}
-
-	if (signature) signature->Release();
-	if (error) error->Release();
-
-}
-
-
-ID3DBlob* RenderResources::CompileShader(const std::wstring& path, const char* target)
-{
-	UINT flags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_WARNINGS_ARE_ERRORS | D3DCOMPILE_ALL_RESOURCES_BOUND;
-
-	const char* entryPoint = (!target || strcmp(target, "vs_5_0") != 0) ? "psmain" : "vsmain";
-
-	ID3DBlob* compiledShader;
-	ID3DBlob* errorBlob;
-
-	HRESULT hr = D3DCompileFromFile(path.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint, target, flags, 0, &compiledShader, &errorBlob);
-
-	if (FAILED(hr))
-	{
-		Utils::DebugError("Shader loading error was: ", hr, ", for shader: ", path);
-		if (errorBlob)
-		{
-			Utils::DebugError("Shader compilation error: ", (const char*)errorBlob->GetBufferPointer(), ", for shader :", path);
-		}
-		return nullptr;
-	}
-
-	return compiledShader;
-}
-
-void RenderResources::CreatePipelineState(ID3D12Device* pDevice, const std::wstring& shaderPath)
-{
-	if (!pDevice)
-	{
-		Utils::DebugError(" PSO device was not initialized !");
-		return;
-	}
-
-	ID3DBlob* vsBlob = CompileShader(shaderPath, "vs_5_0");
-	ID3DBlob* psBlob = CompileShader(shaderPath, "ps_5_0");
-
-	CreateRootSignature(pDevice);
-
-	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = { inputLayout , _countof(inputLayout) };
-	psoDesc.pRootSignature = m_pRootSignature;
-	psoDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
-	psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
-
-
-	D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
-	depthStencilDesc.DepthEnable = TRUE;
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-	depthStencilDesc.StencilEnable = FALSE;
-
-	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-	psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
-	psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-	psoDesc.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
-	psoDesc.RasterizerState.DepthClipEnable = TRUE;
-	psoDesc.RasterizerState.MultisampleEnable = FALSE;
-	psoDesc.RasterizerState.AntialiasedLineEnable = FALSE;
-	psoDesc.RasterizerState.ForcedSampleCount = 0;
-	psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-
-	psoDesc.BlendState.AlphaToCoverageEnable = TRUE;
-	psoDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
-	psoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
-	psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
-	psoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	psoDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	psoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-	psoDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	psoDesc.DepthStencilState = depthStencilDesc;
-	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-
-	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	psoDesc.SampleDesc.Count = 1;
-
-	if (FAILED(pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPipelineState))))
-	{
-		Utils::DebugError("Error failed to create pso !");
-		return;
-	}
 }
 
 void RenderResources::CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllocator* pcmdAllocator, ID3D12PipelineState* pPso)
@@ -836,161 +629,6 @@ void RenderResources::CreateCommandList(ID3D12Device* pDevice, ID3D12CommandAllo
 		Utils::DebugLog("CommandList successfuly created !");
 		return;
 	}
-}
-
-void RenderResources::CreatePostProcessPSO(ID3D12Device* pDevice, const std::wstring& shaderPath)
-{
-	if (!pDevice) return;
-
-	ID3DBlob* vsBlob = CompileShader(shaderPath, "vs_5_0");
-	ID3DBlob* psBlob = CompileShader(shaderPath, "ps_5_0");
-
-	if (!vsBlob || !psBlob) return;
-
-	CreatePostProcessRootSignature(pDevice);
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.pRootSignature = m_pPostProcessRootSignature;
-
-	psoDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
-	psoDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
-
-	psoDesc.InputLayout = { nullptr, 0 };
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-
-	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-	psoDesc.RasterizerState.DepthClipEnable = FALSE;
-
-	D3D12_DEPTH_STENCIL_DESC depthDesc = {};
-	depthDesc.DepthEnable = FALSE;
-	depthDesc.StencilEnable = FALSE;
-	psoDesc.DepthStencilState = depthDesc;
-
-	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	psoDesc.SampleDesc.Count = 1;
-
-	psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
-	psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
-	if (FAILED(pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPostProcessPSO))))
-		Utils::DebugError("Failed to create post process PSO");
-
-	if (vsBlob) vsBlob->Release();
-	if (psBlob) psBlob->Release();
-}
-
-void RenderResources::CreatePostProcessRootSignature(ID3D12Device* pDevice)
-{
-	////////////////////////////////
-	// Root parameter : SRV (t0)  //
-	////////////////////////////////
-
-	D3D12_ROOT_PARAMETER rootParameters[2] = {};
-
-	// Descriptor range for t0
-	D3D12_DESCRIPTOR_RANGE srvRange = {};
-	srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	srvRange.NumDescriptors = 1;
-	srvRange.BaseShaderRegister = 0; // t0
-	srvRange.RegisterSpace = 0;
-	srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
-	rootParameters[0].DescriptorTable.pDescriptorRanges = &srvRange;
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-
-	//////////////////////////////////
-	// Dummy Root parameter : (b0)  //
-	//////////////////////////////////
-
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[1].Descriptor.ShaderRegister = 0;
-	rootParameters[1].Descriptor.RegisterSpace = 0;
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-
-	/////////////////////////////////
-	// Static sampler for sampling //
-	/////////////////////////////////
-
-	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-	samplerDesc.MinLOD = 0.0f;
-	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-	samplerDesc.ShaderRegister = 0; // s0
-	samplerDesc.RegisterSpace = 0;
-	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-	D3D12_STATIC_SAMPLER_DESC samplers[] = { samplerDesc };
-
-
-	/////////////////////////////////
-	//       Root Signature		   //
-	/////////////////////////////////
-
-	D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
-	rootDesc.NumParameters = _countof(rootParameters);
-	rootDesc.pParameters = rootParameters;
-	rootDesc.NumStaticSamplers = _countof(samplers);
-	rootDesc.pStaticSamplers = samplers;
-
-	// Input assembler allowed (even if no InputLayout)
-	rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-
-	//////////////////////////////////////
-	// Serialize + Create the signature //
-	//////////////////////////////////////
-
-	ID3DBlob* signature = nullptr;
-	ID3DBlob* error = nullptr;
-
-	HRESULT hr = D3D12SerializeRootSignature(
-		&rootDesc,
-		D3D_ROOT_SIGNATURE_VERSION_1,
-		&signature,
-		&error
-	);
-
-	if (FAILED(hr))
-	{
-		if (error)
-			Utils::DebugError("PostProcess Root Signature Serialize Error: ", (const char*)error->GetBufferPointer());
-	}
-	else
-	{
-		hr = pDevice->CreateRootSignature(
-			0,
-			signature->GetBufferPointer(),
-			signature->GetBufferSize(),
-			IID_PPV_ARGS(&m_pPostProcessRootSignature)
-		);
-
-		if (FAILED(hr))
-			Utils::DebugError("Error creating PostProcess Root Signature!");
-		else
-			Utils::DebugLog("PostProcess Root Signature created!");
-	}
-
-	if (signature) signature->Release();
-	if (error) error->Release();
-}
-
-ID3D12PipelineState* RenderResources::GetPostProcessPSO()
-{
-    return m_pPostProcessPSO;
 }
 
 void RenderResources::CreateCbvSrvUavDescriptorHeap()
