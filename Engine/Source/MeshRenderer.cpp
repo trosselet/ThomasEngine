@@ -156,6 +156,7 @@ void MeshRenderer::SetMeshFile(const char* objPath, const char* texturePath)
 void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultTexturePath) 
 {
 	Free();
+
 	GraphicEngine& graphics = *GameManager::GetWindow().GetGraphicEngine();
 	std::string extension = std::filesystem::path(objPath).extension().string();
 	std::string geomKey = extension + ":" + objPath;
@@ -188,8 +189,21 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultT
 			}
 		);
 
-		m_ownsMaterial = false;
+		
 	} 
+	else
+	{
+		std::string texPath = defaultTexturePath;
+		std::string texExt = std::filesystem::path(texPath).extension().string();
+		std::string texKey = "tex:" + texPath;
+		pTexture = graphics.m_textureCache.GetOrLoad(texKey, [&]() -> Texture*
+			{
+				return graphics.CreateTexture(texPath, texExt.c_str());
+			}
+		);
+	}
+
+	m_ownsMaterial = false;
 
 	Texture* pNormal = nullptr;
 	
@@ -250,6 +264,7 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultT
 		childMR.m_ownsGeometry = false;
 
 		std::string childTexPath = subMesh.material.diffuseTexturePath;
+		//std::string childTexPath = defaultTexturePath;
 		Texture* childTexture = nullptr;
 		Texture* pNormal = nullptr;
 		Texture* pSpecular = nullptr;

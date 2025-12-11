@@ -72,7 +72,7 @@ Texture::Texture(int8 const* path, GraphicEngine* pGraphic) : m_pTexture(nullptr
 
 Texture::Texture(std::string& path, GraphicEngine* pGraphic) : m_pTexture(nullptr), m_pTextureUploadHeap(nullptr), m_path(path)
 {
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(false);
 
 	std::string filePath = TEXTURE_PATH + path;
     uint8* data = stbi_load(filePath.c_str(), &m_width, &m_height, &m_channels, 4);
