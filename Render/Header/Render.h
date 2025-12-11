@@ -43,6 +43,8 @@ public:
 	void SetNeedsResizeRT() { m_needsResizeRT = true; }
 	void SetResizeRT(WindowResizeInfo resize) { m_resizeRTInfo = resize; }
 
+	void SetWireframe(bool wireframe);
+
 private:
 	void ResizeWindow();
 
@@ -57,6 +59,8 @@ private:
 	WindowResizeInfo m_resizeInfo = {};
 	bool m_needsResizeRT = false;
 	WindowResizeInfo m_resizeRTInfo = {};
+
+	bool m_isWireframe = false;
 
 	friend class GraphicEngine;
 };

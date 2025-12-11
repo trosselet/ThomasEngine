@@ -20,6 +20,8 @@ private:
 
 	std::chrono::steady_clock::time_point lastCameraSwitch;
 	float cameraSwitchCooldown = 0.5f;
+
+	bool m_wireframe = false;
 };
 
 

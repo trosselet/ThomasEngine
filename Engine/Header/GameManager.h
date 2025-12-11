@@ -30,7 +30,7 @@ public:
 	static RenderSystem& GetRenderSystem();
 	static ScriptSystem& GetScriptSystem();
 
-
+	static void SetWireframe(bool wireframe);
 
 private:
 	GameManager(HINSTANCE hInstance);

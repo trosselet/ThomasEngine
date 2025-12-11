@@ -98,7 +98,7 @@ void MeshRenderer::SetCircle(const char* texturePath, Color c, uint32 psoFlags)
 	m_ownsMesh = false;
 
 	m_pMaterial = graphics.CreateMaterial(psoFlags);
-	m_pMaterial->SetTexture(m_pTexture, m_ownsMaterial);
+	m_pMaterial->SetTexture(pTexture, m_ownsMaterial);
 	m_primitive = true;
 }
 
@@ -264,7 +264,6 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultT
 		childMR.m_ownsGeometry = false;
 
 		std::string childTexPath = subMesh.material.diffuseTexturePath;
-		//std::string childTexPath = defaultTexturePath;
 		Texture* childTexture = nullptr;
 		Texture* pNormal = nullptr;
 		Texture* pSpecular = nullptr;

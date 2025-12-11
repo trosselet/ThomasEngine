@@ -5,6 +5,7 @@
 #include <Engine/Header/ScriptSystem.h>
 
 #include <Render/Header/Window.h>
+#include <Render/Header/GraphicEngine.h>
 
 GameManager::GameManager(HINSTANCE hInstance) :
 	m_pWindow(NEW Window(hInstance)),
@@ -100,6 +101,11 @@ RenderSystem& GameManager::GetRenderSystem()
 ScriptSystem& GameManager::GetScriptSystem()
 {
 	return *m_pInstance->m_pScriptSystem;
+}
+
+void GameManager::SetWireframe(bool wireframe)
+{
+	m_pInstance->m_pWindow->GetGraphicEngine()->SetWireframe(wireframe);
 }
 
 void GameManager::GameLoop()

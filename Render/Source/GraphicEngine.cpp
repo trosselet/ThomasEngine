@@ -232,3 +232,8 @@ void GraphicEngine::RecreateOffscreenRT(uint32 width, uint32 height)
 
 	m_pRender->SetResizeRT(resizeInfo);
 }
+
+void GraphicEngine::SetWireframe(bool wireframe)
+{
+	m_pRender->SetWireframe(wireframe);
+}

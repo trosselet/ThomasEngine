@@ -26,14 +26,20 @@ Material::Material(Render* pRender, uint32 psoFlag) :
 	m_materialData.metallic = 0.0f;
 	m_materialData.emmisiveStrength = 0.0f;
 
-	PSOSettings settings = {};
-	settings.flags = static_cast<Utils::PSOFlags>(psoFlag);
+	m_pSettings = new PSOSettings();
+	m_pSettings->flags = static_cast<Utils::PSOFlags>(psoFlag);
 
-	m_pPso = PSOManager::GetInstance()->GetPSO(L"shader.hlsl", settings);
+	m_pPso = PSOManager::GetInstance()->GetPSO(L"shader.hlsl", *m_pSettings);
 }
 
 Material::~Material()
 {
+	if (m_pSettings)
+	{
+		delete m_pSettings;
+		m_pSettings = nullptr;
+	}
+
  	if (m_pDiffuseTexture && !m_isInCache)
 	{
 		delete m_pDiffuseTexture;
@@ -100,10 +106,28 @@ bool Material::UpdateTexture(int16 materialPosition, int16 materialPropertiesPos
 
     std::lock_guard<std::mutex> lock(m_uploadMutex);
 
+
 	cmd->SetGraphicsRootDescriptorTable(materialPosition, m_pDiffuseTexture->GetTextureAddress());
 
     cmd->SetGraphicsRootConstantBufferView((UINT)materialPropertiesPosition, m_uploadMaterialBuffer.GetResource()->GetGPUVirtualAddress());
-    return true;
+	
+	if (sSetWireframe && !m_isTextureWireframed)
+	{
+		m_isTextureWireframed = true;
+		m_pSettings->flags = m_pSettings->flags | Utils::PSOFlags::Wireframe;
+		m_pPso = PSOManager::GetInstance()->GetPSO(L"shader.hlsl", *m_pSettings);
+	}
+	else
+	{
+		if (!sSetWireframe && m_isTextureWireframed)
+		{
+			m_isTextureWireframed = false;
+			m_pSettings->flags = static_cast<Utils::PSOFlags>(static_cast<uint32_t>(m_pSettings->flags) & ~static_cast<uint32_t>(Utils::PSOFlags::Wireframe));
+			m_pPso = PSOManager::GetInstance()->GetPSO(L"shader.hlsl", *m_pSettings);
+		}
+	}
+    
+	return true;
 }
 
 Texture* Material::GetTexture()

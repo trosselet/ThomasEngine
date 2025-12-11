@@ -91,6 +91,15 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
 {
     if (!pMesh) return;
 
+    if (m_isWireframe)
+    {
+        pMaterial->sSetWireframe = m_isWireframe;
+    }
+    else
+    {
+        pMaterial->sSetWireframe = m_isWireframe;
+	}
+
     ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
 
     cmd->SetPipelineState(pMaterial->GetPSO());
@@ -180,6 +189,11 @@ RenderResources* Render::GetRenderResources()
 	return m_pRenderResources;
 }
 
+void Render::SetWireframe(bool wireframe)
+{
+	m_isWireframe = wireframe;
+}
+
 void Render::ResizeWindow()
 {
     if (m_needsResizeWindow)
@@ -188,6 +202,7 @@ void Render::ResizeWindow()
 
 		m_pRenderResources->Resize(m_resizeInfo.width, m_resizeInfo.height);
     }
+
     if (m_needsResizeRT)
     {
 		m_needsResizeRT = false;

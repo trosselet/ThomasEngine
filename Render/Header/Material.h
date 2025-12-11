@@ -7,6 +7,8 @@
 
 struct ObjMaterial;
 
+struct PSOSettings;
+
 class Render;
 class Texture;
 
@@ -41,6 +43,7 @@ public:
 	void SetPSO(ID3D12PipelineState* pPso) { m_pPso = pPso; };
 	ID3D12PipelineState* GetPSO() { return m_pPso; };
 
+	static inline bool sSetWireframe = false;
 private:
 	UploadBuffer<ObjectData> m_uploadBuffer;
 	UploadBuffer<MaterialData> m_uploadMaterialBuffer;
@@ -54,6 +57,9 @@ private:
 
 	Render* m_pRender;
 	ID3D12PipelineState* m_pPso;
+
+	bool m_isTextureWireframed = false;
+	PSOSettings* m_pSettings = {};
 
 	bool m_isInCache = false;
 };

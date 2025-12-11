@@ -33,6 +33,7 @@ void CameraMovement::OnFixedUpdate()
     bool A = GetAsyncKeyState('A') & 0x8000;
     bool E = GetAsyncKeyState('E') & 0x8000;
     bool N = GetAsyncKeyState('N') & 0x8000;
+    bool W = GetAsyncKeyState('W') & 0x0001;
 
     bool LEFT = GetAsyncKeyState(VK_LEFT) & 0x8000;
     bool RIGHT = GetAsyncKeyState(VK_RIGHT) & 0x8000;
@@ -82,5 +83,11 @@ void CameraMovement::OnFixedUpdate()
 
             GameManager::GetActiveScene().SetMainCamera(m_pOwner);
         }
+    }
+
+    if (W)
+    {
+        m_wireframe = !m_wireframe;
+		GameManager::SetWireframe(m_wireframe);
     }
 }

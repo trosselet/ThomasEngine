@@ -53,6 +53,8 @@ public:
 	Render* GetRender();
     void RecreateOffscreenRT(uint32 width, uint32 height);
 
+	void SetWireframe(bool wireframe);
+
 public:
 	std::vector<Mesh*> m_pendingMeshUploads;
 
