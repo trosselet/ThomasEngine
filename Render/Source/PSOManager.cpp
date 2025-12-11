@@ -84,11 +84,13 @@ bool PSOManager::CreatePSO(const std::wstring& psoPath)
 	psoDesc.RasterizerState.ForcedSampleCount = 0;
 	psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-	D3D12_DEPTH_STENCIL_DESC depthDesc = {};
-	depthDesc.DepthEnable = TRUE;
-	depthDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	depthDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-	depthDesc.StencilEnable = FALSE;
+    D3D12_DEPTH_STENCIL_DESC depthDesc = {};
+    // Disable depth testing for post-process shaders (fullscreen quad)
+    bool isPostProcess = (psoPath.find(L"postProcess.hlsl") != std::wstring::npos);
+    depthDesc.DepthEnable = isPostProcess ? FALSE : TRUE;
+    depthDesc.DepthWriteMask = isPostProcess ? D3D12_DEPTH_WRITE_MASK_ZERO : D3D12_DEPTH_WRITE_MASK_ALL;
+    depthDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    depthDesc.StencilEnable = FALSE;
 
 	psoDesc.DepthStencilState = depthDesc;
 	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;

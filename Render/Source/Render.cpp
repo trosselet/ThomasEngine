@@ -57,15 +57,15 @@ void Render::Clear()
     m_pOffscreenRT->Transition(cmd, D3D12_RESOURCE_STATE_RENDER_TARGET);
      
 
-	D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
-	D3D12_RECT scissor = m_pRenderResources->GetRect();
+	D3D12_VIEWPORT viewport = m_pOffscreenRT->GetViewport();
+	D3D12_RECT scissor = m_pOffscreenRT->GetScissor();
 
 
     cmd->RSSetViewports(1, &viewport);
     cmd->RSSetScissorRects(1, &scissor);
 
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pRenderResources->GetCurrentRTV();
-    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pRenderResources->GetCurrentDSV();
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pOffscreenRT->GetRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pOffscreenRT->GetDSV();
 
     cmd->OMSetRenderTargets(1, &rtv, FALSE, m_pOffscreenRT->HasDepth() ? &dsv : nullptr);
 
@@ -76,9 +76,13 @@ void Render::Clear()
         cmd->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
     }
      
+    auto srv = m_pOffscreenRT->GetSRV();
+    assert(srv.ptr != 0);
+
     ID3D12DescriptorHeap* heap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
     cmd->SetDescriptorHeaps(1, &heap);
 
+    cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
     
     cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
@@ -90,7 +94,6 @@ void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& o
     ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
 
     cmd->SetPipelineState(pMaterial->GetPSO());
-    cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
 
     // Upload matrices
     pMaterial->UpdateWorldConstantBuffer(DirectX::XMLoadFloat4x4(&objectWorldMatrix));
@@ -122,35 +125,33 @@ void Render::Display()
     m_pOffscreenRT->Transition(cmd, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     auto backBuffer = m_pRenderResources->GetCurrentRenderTarget();
+    D3D12_RESOURCE_BARRIER bbBarrier = {};
+    bbBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    bbBarrier.Transition.pResource = backBuffer;
+    bbBarrier.Transition.Subresource = 0;
+    bbBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    bbBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    cmd->ResourceBarrier(1, &bbBarrier);
 
-    D3D12_RESOURCE_BARRIER toRT = {};
-    toRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    toRT.Transition.pResource = backBuffer;
-    toRT.Transition.Subresource = 0;
-    toRT.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    toRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    cmd->ResourceBarrier(1, &toRT);
+    D3D12_CPU_DESCRIPTOR_HANDLE bbRTV = m_pRenderResources->GetCurrentRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE bbDSV = m_pRenderResources->GetCurrentDSV();
+    cmd->OMSetRenderTargets(1, &bbRTV, FALSE, &bbDSV);
 
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pRenderResources->GetCurrentRTV();
-    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pRenderResources->GetCurrentDSV();
-
-    cmd->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
-
-    D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
-    D3D12_RECT scissor = m_pRenderResources->GetRect();
+	D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
+	D3D12_RECT scissor = m_pRenderResources->GetRect();
 
     cmd->RSSetViewports(1, &viewport);
     cmd->RSSetScissorRects(1, &scissor);
 
-    ID3D12DescriptorHeap* heap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
-    cmd->SetDescriptorHeaps(1, &heap);
+    ID3D12DescriptorHeap* heaps[] = { m_pRenderResources->GetCbvSrvUavDescriptorHeap() };
+    cmd->SetDescriptorHeaps(1, heaps);
 
-    cmd->SetPipelineState(PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl"));
     cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
+    cmd->SetPipelineState(PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl"));
 
     cmd->SetGraphicsRootDescriptorTable(3, m_pOffscreenRT->GetSRV());
-    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     cmd->DrawInstanced(3, 1, 0, 0);
 
     D3D12_RESOURCE_BARRIER toPresent = {};

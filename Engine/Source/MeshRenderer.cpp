@@ -433,7 +433,7 @@ void MeshRenderer::Free()
 		delete m_pGeometry;
 	}
 
-	if (m_pMaterial && m_ownsMaterial)
+	if (m_pMaterial)
 	{
 		delete m_pMaterial;
 	}
