@@ -13,7 +13,7 @@ class Texture;
 class Material
 {
 public:
-	Material(Render* pRender);
+	Material(Render* pRender, uint32 psoFlag);
 	~Material();
 
 	UploadBuffer<ObjectData>* GetUploadBuffer();

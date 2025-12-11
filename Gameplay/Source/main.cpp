@@ -37,13 +37,13 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pPlateform->transform.SetPosition({ 0.0f, -1.0f, 5.0f });
     pPlateform->transform.SetScaling(Vector3{ 10.0f, 0.2f, 10.0f });
     MeshRenderer& pPlateformMeshRenderer = pPlateform->AddComponent<MeshRenderer>();
-    pPlateformMeshRenderer.SetCube("grid_placeholder_material.png", Color::White);
+    pPlateformMeshRenderer.SetCube("grid_placeholder_material.png", Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pPlateform->SetName("Plateform");
 
     GameObject* const pRectangle = NEW GameObject(scene);
     pRectangle->transform.SetPosition({ 0.0f, 0.0f, 5.0f });
     MeshRenderer& pRectangleMeshRendererTest = pRectangle->AddComponent<MeshRenderer>();
-    pRectangleMeshRendererTest.SetRectangle(Color::White);
+    pRectangleMeshRendererTest.SetRectangle(Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pRectangle->SetName("Rectangle1");
 
     /*for (int i = 0; i < 8000; i++)
@@ -58,30 +58,30 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     GameObject* const pCircle1 = NEW GameObject(scene);
     pCircle1->transform.SetPosition({ 3.0f, 0.0f, 5.0f });
     MeshRenderer& pCircle1MeshRendererTest = pCircle1->AddComponent<MeshRenderer>();
-    pCircle1MeshRendererTest.SetCircle(Color::White);
-    pCircle1MeshRendererTest.SetColor(Color::Blue);;
+    pCircle1MeshRendererTest.SetCircle(Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
+    pCircle1MeshRendererTest.SetColor(Color::Blue);
     pCircle1->SetName("Circle1");
    
     GameObject* const pCube1 = NEW GameObject(scene);
     pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
     MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
-    pCube1MeshRendererTest.SetCube("wood.jpg", Color::White);
+    pCube1MeshRendererTest.SetCube("wood.jpg", Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pCube1MeshRendererTest.SetColor(Color::Red);
     pCube1->SetName("Cube");
 
     GameObject* const pSky = NEW GameObject(scene);
     pSky->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pSky->transform.RotateCartesian({0.0f, 0.0f, 180.0f});
-    pSky->transform.SetScaling(Vector3{ -10000.0f, -10000.0f, -10000.0f });
+    pSky->transform.SetScaling(Vector3{ 10000.0f, 10000.0f, 10000.0f });
     MeshRenderer& pSkyMeshRendererTest = pSky->AddComponent<MeshRenderer>();
-    pSkyMeshRendererTest.SetSphere("sky.jpg", Color::White);
+    pSkyMeshRendererTest.SetSphere("sky.jpg", Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite | Utils::PSOFlags::CullFront));
     pSky->SetName("Sky");
 
     GameObject* const pObj = NEW GameObject(scene);
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pObj->transform.SetScaling(Vector3{ 0.1f, 0.1f, 0.1f });
     MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
-    pObjMeshRendererTest.SetMeshFile("Female/Female.obj");
+    pObjMeshRendererTest.SetMeshFile("Female/Female.obj", static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pObj->SetName("Obj");
 
     /*GameObject* const pObj1 = NEW GameObject(scene);

@@ -101,9 +101,9 @@ Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)
 	return mesh;
 }
 
-Material* GraphicEngine::CreateMaterial()
+Material* GraphicEngine::CreateMaterial(uint32 psoFlag)
 {
-	return NEW Material(m_pRender);
+	return NEW Material(m_pRender, psoFlag);
 }
 
 Texture* GraphicEngine::CreateTexture(std::string& filePath, const char* extension)

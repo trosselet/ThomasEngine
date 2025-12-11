@@ -5,6 +5,8 @@
 #include <sstream>
 #include <Windows.h>
 
+#include <Tools/Header/PrimitiveTypes.h>
+
 namespace Utils
 {
 #define assert( condition ) if ( condition == false ) throw
@@ -81,6 +83,38 @@ namespace Utils
 	{
 		return start + time * (end - start);
 	}
+#pragma endregion
+
+#pragma region Flags
+	
+	enum class PSOFlags : uint32
+	{
+		None = 0,
+		DepthEnable = 1 << 0,
+		DepthWrite = 1 << 1,
+		AlphaBlend = 1 << 2,
+		Wireframe = 1 << 3,
+		CullNone = 1 << 4,
+		CullFront = 1 << 5,
+		PostProcess = 1 << 6
+	};
+
+	inline PSOFlags operator|(PSOFlags a, PSOFlags b)
+	{
+		return static_cast<PSOFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+	}
+
+	inline PSOFlags operator&(PSOFlags a, PSOFlags b)
+	{
+		return static_cast<PSOFlags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+	}
+
+	inline bool HasFlag(PSOFlags value, PSOFlags flag)
+	{
+		return (value & flag) != PSOFlags::None;
+	}
+
+
 #pragma endregion
 
 }

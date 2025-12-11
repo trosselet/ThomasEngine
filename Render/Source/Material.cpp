@@ -6,7 +6,7 @@
 #include <Render/Header/PSOManager.h>
 #include <Render/Header/Texture.h>
 
-Material::Material(Render* pRender) :
+Material::Material(Render* pRender, uint32 psoFlag) :
 	m_pRender(pRender),
 	m_uploadBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1),
 	m_uploadMaterialBuffer(pRender->GetRenderResources()->GetDevice(), 1, 1),
@@ -26,8 +26,10 @@ Material::Material(Render* pRender) :
 	m_materialData.metallic = 0.0f;
 	m_materialData.emmisiveStrength = 0.0f;
 
+	PSOSettings settings = {};
+	settings.flags = static_cast<Utils::PSOFlags>(psoFlag);
 
-	m_pPso = PSOManager::GetInstance()->GetPSO(L"shader.hlsl");
+	m_pPso = PSOManager::GetInstance()->GetPSO(L"shader.hlsl", settings);
 }
 
 Material::~Material()

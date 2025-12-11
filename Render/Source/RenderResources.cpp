@@ -20,8 +20,16 @@ RenderResources::RenderResources(HWND hwnd, uint32 width, uint32 height)
 	CreateCommandAllocator(m_pDevice);
 
 	PSOManager::Initialize(this);
-	PSOManager::GetInstance()->GetPSO(L"shader.hlsl");
-	PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl");
+
+	PSOSettings defaultSettings = {};
+	decltype(defaultSettings.flags) defaultFlags = Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite | Utils::PSOFlags::Wireframe;
+
+	PSOManager::GetInstance()->GetPSO(L"shader.hlsl", defaultSettings);
+
+	PSOSettings postProcessSettings = {};
+	postProcessSettings.flags = Utils::PSOFlags::PostProcess | Utils::PSOFlags::AlphaBlend | Utils::PSOFlags::Wireframe;
+
+	PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl", postProcessSettings);
 	CreateCommandList(m_pDevice, m_pCommandAllocator, PSOManager::GetInstance()->GetPSO(L"shader.hlsl"));
 
     CreateBundles(4);

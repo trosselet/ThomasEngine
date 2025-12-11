@@ -17,22 +17,22 @@ public:
 
 	uint8 renderLayer = 0;
 
-	void SetRectangle(Color c);
-	void SetRectangle(const char* texturePath, Color c);
+	void SetRectangle(Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
+	void SetRectangle(const char* texturePath, Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
 
-	void SetCircle(Color c);
-	void SetCircle(const char* texturePath, Color c);
+	void SetCircle(Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
+	void SetCircle(const char* texturePath, Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
 
-	void SetSphere(Color c);
-	void SetSphere(const char* texturePath, Color c);
+	void SetSphere(Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
+	void SetSphere(const char* texturePath, Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
 
-	void SetCube(Color c);
-	void SetCube(const char* texturePath, Color c);
+	void SetCube(Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
+	void SetCube(const char* texturePath, Color c, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
 
-	void SetMeshFile(const char* objPath);
-	void SetMeshFile(const char* objPath, const char* texturePath);
+	void SetMeshFile(const char* objPath, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
+	void SetMeshFile(const char* objPath, const char* texturePath, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
 
-	void SetMeshFileInternal(const char* objPath, const char* texturePath);
+	void SetMeshFileInternal(const char* objPath, const char* texturePath, uint32 psoFlags = static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
 
 	void SetColor(Color c);
 	void SetTexture(const char* texturePath);

@@ -147,7 +147,11 @@ void Render::Display()
     cmd->SetDescriptorHeaps(1, heaps);
 
     cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
-    cmd->SetPipelineState(PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl"));
+
+    PSOSettings postProcessSettings = {};
+    postProcessSettings.flags = Utils::PSOFlags::PostProcess | Utils::PSOFlags::AlphaBlend;
+
+    cmd->SetPipelineState(PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl", postProcessSettings));
 
     cmd->SetGraphicsRootDescriptorTable(3, m_pOffscreenRT->GetSRV());
 

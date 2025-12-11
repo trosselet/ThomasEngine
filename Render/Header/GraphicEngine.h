@@ -33,7 +33,7 @@ public:
 	Geometry* CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color);
 	ObjModel* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
 	Mesh* CreateMesh(Geometry* pGeometry);
-	Material* CreateMaterial();
+	Material* CreateMaterial(uint32 psoFlags);
 	Texture* CreateTexture(std::string& filePath, const char* extension);
 
 	void SetColor(Geometry* pGeometry, Color c);

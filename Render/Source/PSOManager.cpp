@@ -29,18 +29,20 @@ PSOManager::~PSOManager()
 	}
 }
 
-ID3D12PipelineState* PSOManager::GetPSO(const std::wstring& psoPath)
+ID3D12PipelineState* PSOManager::GetPSO(const std::wstring& psoPath, const PSOSettings& settings)
 {
-	auto it = m_psoCache.find(SHADER_PATH + psoPath);
+	std::wstring key = GeneratePSOKey(SHADER_PATH + psoPath, settings.flags);
+
+	auto it = m_psoCache.find(key);
 	if (it != m_psoCache.end())
 	{
 		return it->second.pPipelineState;
 	}
 	else
 	{
-		if (CreatePSO(SHADER_PATH + psoPath))
+		if (CreatePSO(SHADER_PATH + psoPath, settings))
 		{
-			return m_psoCache[SHADER_PATH + psoPath].pPipelineState;
+			return m_psoCache[key].pPipelineState;
 		}
 		else
 		{
@@ -54,10 +56,13 @@ ID3D12RootSignature* PSOManager::GetRootSignature()
 	return m_pRootSignature;
 }
 
-bool PSOManager::CreatePSO(const std::wstring& psoPath)
+bool PSOManager::CreatePSO(const std::wstring& psoPath, const PSOSettings& settings = PSOSettings())
 {
 	ID3DBlob* vertexShader = CompileShader(psoPath, "vs_5_0");
 	ID3DBlob* pixelShader = CompileShader(psoPath, "ps_5_0");
+
+	if (!vertexShader || !pixelShader)
+		return false;
 
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 	{
@@ -71,10 +76,30 @@ bool PSOManager::CreatePSO(const std::wstring& psoPath)
 	psoDesc.InputLayout = { inputLayout, _countof(inputLayout) };
 	psoDesc.pRootSignature = m_pRootSignature;
 	psoDesc.VS = { vertexShader->GetBufferPointer(), vertexShader->GetBufferSize() };
-	psoDesc.PS = { pixelShader->GetBufferPointer(),  pixelShader->GetBufferSize() };
+	psoDesc.PS = { pixelShader->GetBufferPointer(), pixelShader->GetBufferSize() };
 
-	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+	// Rasterizer
+	if (Utils::HasFlag(settings.flags, Utils::PSOFlags::Wireframe))
+	{
+		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	}
+	else
+	{
+		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+	}
+
+	if (Utils::HasFlag(settings.flags, Utils::PSOFlags::CullNone))
+	{
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+	}
+	else if (Utils::HasFlag(settings.flags, Utils::PSOFlags::CullFront))
+	{
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+	}
+	else
+	{
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+	}
 	psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
 	psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
 	psoDesc.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
@@ -84,19 +109,38 @@ bool PSOManager::CreatePSO(const std::wstring& psoPath)
 	psoDesc.RasterizerState.ForcedSampleCount = 0;
 	psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-    D3D12_DEPTH_STENCIL_DESC depthDesc = {};
-    // Disable depth testing for post-process shaders (fullscreen quad)
-    bool isPostProcess = (psoPath.find(L"postProcess.hlsl") != std::wstring::npos);
-    depthDesc.DepthEnable = isPostProcess ? FALSE : TRUE;
-    depthDesc.DepthWriteMask = isPostProcess ? D3D12_DEPTH_WRITE_MASK_ZERO : D3D12_DEPTH_WRITE_MASK_ALL;
-    depthDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-    depthDesc.StencilEnable = FALSE;
+	// Depth stencil
+	D3D12_DEPTH_STENCIL_DESC depthDesc = {};
 
+	if (Utils::HasFlag(settings.flags, Utils::PSOFlags::PostProcess))
+	{
+		depthDesc.DepthEnable = FALSE;
+		depthDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	}
+	else
+	{
+		depthDesc.DepthEnable = Utils::HasFlag(settings.flags, Utils::PSOFlags::DepthEnable);
+		depthDesc.DepthWriteMask = Utils::HasFlag(settings.flags, Utils::PSOFlags::DepthWrite) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+	}
+
+	depthDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	depthDesc.StencilEnable = FALSE;
 	psoDesc.DepthStencilState = depthDesc;
 	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
+	// Blend
+	D3D12_RENDER_TARGET_BLEND_DESC blendDesc = {};
+
+	if (Utils::HasFlag(settings.flags, Utils::PSOFlags::AlphaBlend))		
+	{
+		blendDesc.BlendEnable = TRUE;
+	}
+	else
+	{
+		blendDesc.BlendEnable = FALSE;
+	}
+
 	psoDesc.BlendState.AlphaToCoverageEnable = TRUE;
-	psoDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
 	psoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
 	psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
 	psoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
@@ -112,17 +156,15 @@ bool PSOManager::CreatePSO(const std::wstring& psoPath)
 	psoDesc.SampleDesc.Count = 1;
 
 	ID3D12PipelineState* pPipelineState = nullptr;
-
 	HRESULT hr = m_pRenderResources->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pPipelineState));
 	if (FAILED(hr))
-	{
 		return false;
-	}
 
-	m_psoCache[psoPath] = { pPipelineState, psoPath };
+	std::wstring key = GeneratePSOKey(psoPath, settings.flags);
+	m_psoCache[key] = { settings, pPipelineState, psoPath };
 
 	if (vertexShader) vertexShader->Release();
-	if (pixelShader)  pixelShader->Release();
+	if (pixelShader) pixelShader->Release();
 
 	return true;
 }
