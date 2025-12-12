@@ -1,6 +1,8 @@
 #ifndef COLOR_INCULDE__H
 #define COLOR_INCULDE__H
 
+#include <Tools/Header/PrimitiveTypes.h>
+
 class Color
 {
 public:
@@ -9,6 +11,7 @@ public:
 	Color(float red, float green, float blue, float alpha = 1);
 
 	Color& operator=(const Color& other);
+	Color& operator=(const Vector3& other);
 
 
 public:

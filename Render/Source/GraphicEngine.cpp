@@ -84,8 +84,73 @@ ObjModel* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char
 {
 	if (strcmp(extension, ".obj") == 0)
 		return ObjFactory::LoadObjFile(meshPath, color);
-	/*else if (strcmp(extension, ".fbx") == 0)
-		return FbxFactory::LoadFbxFile(meshPath, color);*/
+	else if (strcmp(extension, ".fbx") == 0)
+	{
+		FbxParser::SceneData& sceneData = FbxFactory::LoadFbxFile(meshPath);
+		ObjModel* pObjModel = NEW ObjModel();
+
+		for (const FbxParser::Mesh& mesh : sceneData.meshes)
+		{
+			ObjSubMesh subMesh;
+
+			const FbxParser::Material& mat = sceneData.materials[mesh.materialIndex];
+
+			subMesh.material.diffuseColor = Vector3
+			{
+				mat.diffuseColor.data[0],
+				mat.diffuseColor.data[1],
+				mat.diffuseColor.data[2]
+			};
+
+			subMesh.material.specularColor = Vector3
+			{
+				mat.specularColor.data[0],
+				mat.specularColor.data[1],
+				mat.specularColor.data[2]
+			};
+
+			subMesh.material.ambientColor = Vector3
+			{
+				mat.ambientColor.data[0],
+				mat.ambientColor.data[1],
+				mat.ambientColor.data[2]
+			};
+
+			subMesh.material.shininess = mat.shininess;
+
+			if (mat.textures.count("diffuse"))
+				subMesh.material.diffuseTexturePath = mat.textures.at("diffuse");
+
+			if (mat.textures.count("normals"))
+				subMesh.material.normalTexturePath = mat.textures.at("normals");
+
+			if (mat.textures.count("specular"))
+				subMesh.material.specularTexturePath = mat.textures.at("specular");
+
+			subMesh.geometry = NEW Geometry();
+
+			Geometry* geo = subMesh.geometry;
+
+			geo->positions.reserve(mesh.positions.size());
+			for (const Vector3& p : mesh.positions)
+				geo->positions.emplace_back(XMFLOAT3(p.data[0], p.data[1], p.data[2]));
+
+			geo->normals.reserve(mesh.normals.size());
+			for (const Vector3& n : mesh.normals)
+				geo->normals.emplace_back(XMFLOAT3(n.data[0], n.data[1], n.data[2]));
+
+			geo->UVs.reserve(mesh.uvs0.size());
+			for (const Vector3& uv : mesh.uvs0)
+				geo->UVs.emplace_back(XMFLOAT2(uv.data[0], uv.data[1]));
+
+			geo->indicies = mesh.indices;
+			geo->indexNumber = (uint32)mesh.indices.size();
+
+			pObjModel->subMeshes.push_back(std::move(subMesh));
+		}
+
+		return pObjModel;
+	}
 
 	return nullptr;
 }

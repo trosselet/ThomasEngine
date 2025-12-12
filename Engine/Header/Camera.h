@@ -15,8 +15,8 @@ struct Camera : public ComponentBase<Component::Camera>
 	float32 nearZ = 0.1f;
 	float32 farZ = 10000000.0f;
 
-	Matri4x4 projectionMatrix;
-	Matri4x4 viewMatrix;
+	Matrix4x4 projectionMatrix;
+	Matrix4x4 viewMatrix;
 };
 
 

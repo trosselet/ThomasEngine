@@ -82,13 +82,13 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pObjMeshRendererTest.SetMeshFile("Female/Female.obj", static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pObj->SetName("Obj");
 
-    /*GameObject* const pObj1 = NEW GameObject(scene);
+    GameObject* const pObj1 = NEW GameObject(scene);
     pObj1->transform.SetPosition({ 5.0f, 0.0f, 0.0f });
     pObj1->transform.RotateYPR({ 0.0f, 55.0f, 0.0f });
     pObj1->transform.SetScaling(Vector3{ 1.f, 1.f, 1.f });
     MeshRenderer& pObj1MeshRendererTest = pObj1->AddComponent<MeshRenderer>();
-    pObj1MeshRendererTest.SetMeshFile("Dragon.fbx", "Dragon.dds");
-    pObj1->SetName("Obj2");*/
+    pObj1MeshRendererTest.SetMeshFile("Wolf.fbx");
+    pObj1->SetName("Obj2");
 
     GameManager::Run();
     GameManager::Release();

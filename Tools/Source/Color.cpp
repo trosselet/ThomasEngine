@@ -30,3 +30,15 @@ Color& Color::operator=(const Color& other)
 	}
 	return *this;
 }
+
+Color& Color::operator=(const Vector3& other)
+{
+	if (this->r != other.data[0] && this->g != other.data[1] && this->b != other.data[2])
+	{
+		r = other.data[0];
+		g = other.data[1];
+		b = other.data[2];
+		a = 1.f;
+	}
+	return *this;
+}

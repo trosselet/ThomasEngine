@@ -5,9 +5,44 @@
 #include <assimp/scene.h>
 #include <assimp/postProcess.h>
 
-SceneData FbxFactory::LoadFbxFile(const char* filePath)
+using namespace FbxParser;
+
+SceneData& FbxFactory::LoadFbxFile(const char* filePath)
 {
-	return SceneData();
+	SceneData out = {};
+	Assimp::Importer importer;
+	uint32 importFlags =
+		aiProcess_Triangulate |
+		aiProcess_GenSmoothNormals |
+		aiProcess_CalcTangentSpace |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_LimitBoneWeights |
+		aiProcess_ImproveCacheLocality |
+		aiProcess_ValidateDataStructure;
+
+	std::string fullPath = std::string("assets/") + filePath;
+
+	const aiScene* pAiScene = importer.ReadFile(fullPath, importFlags);
+
+	if (!pAiScene)
+	{
+		Utils::DebugError("Failed to load FBX file: ", importer.GetErrorString());
+		assert(false);
+	}
+
+	std::unordered_map<const aiNode*, int32> nodeMap;
+	out.nodes.clear();
+	BuildNodeRecursive(pAiScene->mRootNode, -1, out, nodeMap);
+
+	ProcessMaterials(pAiScene, out);
+	ProcessMeshes(pAiScene, out, nodeMap);
+	ProcessBonesAndWeights(pAiScene, out, nodeMap);
+	ProcessAnimations(pAiScene, out);
+	ProcessCamerasAndLights(pAiScene, out);
+
+	PrintSummary(out);
+
+	return out;
 }
 
 void FbxFactory::EnsureVertexBoneWeights(Mesh& mesh)
@@ -105,22 +140,206 @@ void FbxFactory::ProcessMeshes(const aiScene* pAiScene, SceneData& out, const st
 
 void FbxFactory::ProcessMaterials(const aiScene* pAiScene, SceneData& out)
 {
+	out.materials.reserve(pAiScene->mNumMaterials);
+
+	for (uint32 i = 0; i < pAiScene->mNumMaterials; ++i)
+	{
+		aiMaterial* am = pAiScene->mMaterials[i];
+		Material material;
+		aiString name;
+		if (AI_SUCCESS == am->Get(AI_MATKEY_NAME, name))
+		{
+			material.name = name.C_Str();
+		}
+		aiColor3D color;
+		if (AI_SUCCESS == am->Get(AI_MATKEY_COLOR_DIFFUSE, color))
+		{
+			material.diffuseColor = Vector3(color.r, color.g, color.b);
+		}
+		if (AI_SUCCESS == am->Get(AI_MATKEY_COLOR_SPECULAR, color))
+		{
+			material.specularColor = Vector3(color.r, color.g, color.b);
+		}
+		if (AI_SUCCESS == am->Get(AI_MATKEY_COLOR_AMBIENT, color))
+		{
+			material.ambientColor = Vector3(color.r, color.g, color.b);
+		}
+		float shininess;
+		if (AI_SUCCESS == am->Get(AI_MATKEY_SHININESS, shininess))
+		{
+			material.shininess = shininess;
+		}
+
+		aiTextureType textureTypes[] = {
+			aiTextureType_DIFFUSE,
+			aiTextureType_SPECULAR,
+			aiTextureType_NORMALS,
+			aiTextureType_HEIGHT,
+			aiTextureType_EMISSIVE
+		};
+
+		const char* texKeys[] = 
+		{
+			"diffuse",
+			"specular",
+			"normal",
+			"height",
+			"emissive"
+		};
+
+		for (size_t t = 0; t < sizeof(textureTypes) / sizeof(textureTypes[0]); ++t)
+		{
+			aiTextureType texType = textureTypes[t];
+			unsigned int texCount = am->GetTextureCount(texType);
+			if (texCount > 0)
+			{
+				aiString texPath;
+				if (AI_SUCCESS == am->GetTexture(texType, 0, &texPath))
+				{
+					material.textures[texKeys[t]] = texPath.C_Str();
+				}
+			}
+		}
+
+		out.materials.push_back(std::move(material));
+	}
+
 }
 
 void FbxFactory::ProcessBonesAndWeights(const aiScene* pAiScene, SceneData& out, const std::unordered_map<const aiNode*, int32>& nodeMap)
 {
+	std::unordered_map<std::string, int32> boneNameToIndex;
+
+	for (uint32 mi = 0; mi < pAiScene->mNumMeshes; ++mi)
+	{
+		aiMesh* am = pAiScene->mMeshes[mi];
+		for (uint32 b = 0; b < am->mNumBones; ++b)
+		{
+			aiBone* ab = am->mBones[b];
+			std::string bName = ab->mName.C_Str();
+			if (boneNameToIndex.find(bName) == boneNameToIndex.end())
+			{
+				Bone bone;
+				bone.name = bName;
+				bone.offsetMatrix = AiMatrixToMatrix4x4(ab->mOffsetMatrix);
+				int nodeIndex = -1;
+
+				for (size_t ni = 0; ni < out.nodes.size(); ++ni)
+				{
+					if (out.nodes[ni].name == bName)
+					{
+						nodeIndex = static_cast<int>(ni);
+						break;
+					}
+				}
+
+				bone.nodeIndex = nodeIndex;
+				int32 boneIndex = static_cast<int32>(out.bones.size());
+				boneNameToIndex[bName] = boneIndex;
+				out.bones.push_back(std::move(bone));
+			}
+		}		
+	}
+
+	for (uint32 mi = 0; mi < pAiScene->mNumMeshes; ++mi)
+	{
+		aiMesh* am = pAiScene->mMeshes[mi];
+		Mesh& mesh = out.meshes[mi];
+		EnsureVertexBoneWeights(mesh);
+		
+		for (uint32 b = 0; b < am->mNumBones; ++b)
+		{
+			aiBone* ab = am->mBones[b];
+			std::string bName = ab->mName.C_Str();
+			int32 boneIndex = boneNameToIndex[bName];
+			for (uint32 w = 0; w < ab->mNumWeights; ++w)
+			{
+				aiVertexWeight& aw = ab->mWeights[w];
+				uint32 vertexId = aw.mVertexId;
+				float32 weight = aw.mWeight;
+				mesh.boneWeights[vertexId].push_back({ static_cast<uint32>(boneIndex), weight });
+			}
+		}
+
+	}
+
 }
 
 void FbxFactory::ProcessAnimations(const aiScene* pAiScene, SceneData& out)
 {
+	out.animations.reserve(pAiScene->mNumAnimations);
+
+	for (uint32 a = 0; a < pAiScene->mNumAnimations; ++a)
+	{
+		aiAnimation* anim = pAiScene->mAnimations[a];
+		Animation animation;
+		animation.name = anim->mName.C_Str();
+		animation.duration = anim->mDuration;
+		animation.ticksPerSecond = anim->mTicksPerSecond != 0.0 ? anim->mTicksPerSecond : 25.0;
+
+		for (uint32 c = 0; c < anim->mNumChannels; ++c)
+		{
+			aiNodeAnim* chan = anim->mChannels[c];
+			AnimationChannel channel;
+			channel.nodeName = chan->mNodeName.C_Str();
+
+			for (uint32 pk = 0; pk < chan->mNumPositionKeys; ++pk)
+			{
+				aiVectorKey& pv = chan->mPositionKeys[pk];
+				channel.positionKeys.push_back({ pv.mTime, Vector3(pv.mValue.x, pv.mValue.y, pv.mValue.z) });
+			}
+			for (uint32 rk = 0; rk < chan->mNumRotationKeys; ++rk)
+			{
+				aiQuatKey& rv = chan->mRotationKeys[rk];
+				channel.rotationKeys.push_back({ rv.mTime, rv.mValue.w, rv.mValue.x, rv.mValue.y, rv.mValue.z });
+			}
+			for (uint32 sk = 0; sk < chan->mNumScalingKeys; ++sk)
+			{
+				aiVectorKey& sv = chan->mScalingKeys[sk];
+				channel.scalingKeys.push_back({ sv.mTime, Vector3(sv.mValue.x, sv.mValue.y, sv.mValue.z) });
+			}
+
+			animation.channels.push_back(std::move(channel));
+		}
+		out.animations.push_back(std::move(animation));
+	}
 }
 
 void FbxFactory::ProcessCamerasAndLights(const aiScene* pAiScene, SceneData& out)
 {
+	for (uint32 i = 0; i < pAiScene->mNumCameras; ++i)
+	{
+		aiCamera* ac = pAiScene->mCameras[i];
+		CameraData camera;
+		camera.name = ac->mName.C_Str();
+		camera.position = Vector3(ac->mPosition.x, ac->mPosition.y, ac->mPosition.z);
+		camera.lookAt = Vector3(ac->mLookAt.x, ac->mLookAt.y, ac->mLookAt.z);
+		camera.fov = ac->mHorizontalFOV;
+		out.cameras.push_back(std::move(camera));
+	}
+
+	for (uint32 i = 0; i < pAiScene->mNumLights; ++i)
+	{
+		aiLight* al = pAiScene->mLights[i];
+		LightingData light;
+		light.name = al->mName.C_Str();
+		light.color = Vector3(al->mColorDiffuse.r, al->mColorDiffuse.g, al->mColorDiffuse.b);
+		light.intensity = 1.0f;
+		out.lights.push_back(std::move(light));
+	}
+
 }
 
 void FbxFactory::PrintSummary(const SceneData& scene)
 {
+	Utils::DebugLog("FBX Import Summary:");
+	Utils::DebugLog("  Meshes: ", scene.meshes.size());
+	Utils::DebugLog("  Materials: ", scene.materials.size());
+	Utils::DebugLog("  Nodes: ", scene.nodes.size());
+	Utils::DebugLog("  Bones: ", scene.bones.size());
+	Utils::DebugLog("  Animations: ", scene.animations.size());
+	Utils::DebugLog("  Cameras: ", scene.cameras.size());
+	Utils::DebugLog("  Lights: ", scene.lights.size());
 }
 
 Matrix4x4 FbxFactory::AiMatrixToMatrix4x4(const aiMatrix4x4& aiMat)
