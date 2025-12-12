@@ -93,13 +93,14 @@ float4 psmain(VSOutput input) : SV_TARGET
 {
     float4 diffuseTex = gDiffuseTex.Sample(gSampler, input.texcoord);
     float4 specularTex = gSpecularTex.Sample(gSampler, input.texcoord);
+
     float3 N = normalize(input.normal);
-
     float3 V = normalize(-input.worldPos);
-    
-    float3 matColor = diffuseTex.rgb * input.color.rgb;
-    
-    float3 litColor = ComputeLighting(N, V, matColor, specularTex.rgb);
 
-    return float4(litColor * matColor, diffuseTex.a);
+    float3 albedo = diffuseTex.rgb * input.color.rgb;
+
+    float3 lit = ComputeLighting(N, V, diffuseTex.rgb, specularTex.rgb);
+    
+    return float4(lit * albedo, diffuseTex.a);
 }
+

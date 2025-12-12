@@ -65,7 +65,7 @@ void MeshRenderer::SetRectangle(const char* texturePath, Color c, uint32 psoFlag
 
 void MeshRenderer::SetCircle(Color c, uint32 psoFlags)
 {
-	SetCircle("DefaultTex.png", c);
+	SetCircle("DefaultTex.png", c, psoFlags);
 }
 
 void MeshRenderer::SetCircle(const char* texturePath, Color c, uint32 psoFlags)
@@ -104,7 +104,7 @@ void MeshRenderer::SetCircle(const char* texturePath, Color c, uint32 psoFlags)
 
 void MeshRenderer::SetCube(Color c, uint32 psoFlags)
 {
-	SetCube("DefaultTex.png", c);
+	SetCube("DefaultTex.png", c, psoFlags);
 }
 
 void MeshRenderer::SetCube(const char* texturePath, Color c, uint32 psoFlags)
@@ -384,7 +384,7 @@ Material* MeshRenderer::GetMaterial()
 
 void MeshRenderer::SetSphere(Color c, uint32 psoFlags)
 {
-	SetSphere("DefaultTex.png", c);
+	SetSphere("DefaultTex.png", c, psoFlags);
 }
 
 void MeshRenderer::SetSphere(const char* texturePath, Color c, uint32 psoFlags)

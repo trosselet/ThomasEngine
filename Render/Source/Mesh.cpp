@@ -114,7 +114,8 @@ void Mesh::UploadGeometry(bool deferred)
         {
             if (i >= m_pGeometry->UVs.size())
             {
-				continue;
+                geometryData.push_back(0.0f);
+                geometryData.push_back(0.0f);
             }
             else
             {
@@ -127,7 +128,9 @@ void Mesh::UploadGeometry(bool deferred)
         {
             if (i >= m_pGeometry->normals.size())
             {
-                continue;
+                geometryData.push_back(0.0f);
+                geometryData.push_back(0.0f);
+                geometryData.push_back(1.0f);
             }
             else
             {
@@ -254,7 +257,7 @@ void Mesh::UpdateMesh()
 
     rr->ResetCommandList();
 
-    UploadGeometry(false);
+    UploadGeometry(true);
 
     rr->GetCommandList()->Close();
     rr->ExecuteCommandList();
