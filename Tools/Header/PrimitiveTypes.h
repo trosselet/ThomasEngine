@@ -21,6 +21,6 @@ using float64 = double;
 using Vector2 = Vector<float32, 2>;
 using Vector3 = Vector<float32, 3>;
 using Vector4 = Vector<float32, 4>;
-using Matri4x4 = Matrix4x4;
+using Matrix4x4 = Matrix4x4;
 
 constexpr float32 PI = 3.14159265358979323846;

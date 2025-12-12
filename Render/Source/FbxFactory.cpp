@@ -1,149 +1,136 @@
 #include <Render/pch.h>
-//#include <Render/Header/FbxFactory.h>
-//#include <Render/Header/Geometry.h>
-//
-//#include <fstream>
-//#include <string_view>
-//#include <cstdlib>
-//
-//#if _EXE
-//#define FBX_PATH "../res/Gameplay/obj/"
-//#else
-//#define FBX_PATH "../../res/Gameplay/obj/"
-//#endif
-//
-//Geometry* FbxFactory::LoadFbxFile(const char* filePath, Color color)
-//{
-//    Geometry* pGeometry = new Geometry();
-//
-//    std::string fullPath = FBX_PATH + std::string(filePath);
-//
-//    ///////////////
-//    // INIT FBX SDK
-//    ///////////////
-//
-//    FbxManager* manager = FbxManager::Create();
-//    if (!manager)
-//    {
-//        Utils::DebugError("Error trying to initialize the fbx sdk");
-//        return nullptr;
-//    }
-//
-//    FbxIOSettings* ios = FbxIOSettings::Create(manager, IOSROOT);
-//    manager->SetIOSettings(ios);
-//
-//    FbxImporter* importer = FbxImporter::Create(manager, "Importer");
-//    if (!importer->Initialize(fullPath.c_str(), -1, manager->GetIOSettings()))
-//    {
-//        Utils::DebugError("Error importing the fbx: ", importer->GetStatus().GetErrorString());
-//        importer->Destroy();
-//        ios->Destroy();
-//        manager->Destroy();
-//        delete pGeometry;
-//        return nullptr;
-//    }
-//
-//    FbxScene* scene = FbxScene::Create(manager, "scene");
-//    importer->Import(scene);
-//
-//    FbxNode* rootNode = scene->GetRootNode();
-//    if (rootNode)
-//    {
-//        int meshCount = rootNode->GetChildCount();
-//        for (int i = 0; i < meshCount; ++i)
-//        {
-//            FbxNode* node = rootNode->GetChild(i);
-//            if (!node) continue;
-//
-//            FbxMesh* fbxMesh = node->GetMesh();
-//            if (!fbxMesh) continue;
-//
-//            /////////////////////////////
-//            // GET THE NAME OF THE UV SET
-//            /////////////////////////////
-//
-//            FbxStringList uvNames;
-//            fbxMesh->GetUVSetNames(uvNames);
-//            const char* uvName = uvNames.GetCount() > 0 ? uvNames[0] : nullptr;
-//
-//            int polyCount = fbxMesh->GetPolygonCount();
-//            for (int polyIdx = 0; polyIdx < polyCount; ++polyIdx)
-//            {
-//                int polySize = fbxMesh->GetPolygonSize(polyIdx);
-//                for (int vertIdx = 0; vertIdx < polySize; ++vertIdx)
-//                {
-//                    int ctrlPointIdx = fbxMesh->GetPolygonVertex(polyIdx, vertIdx);
-//                    if (ctrlPointIdx < 0) continue;
-//
-//                    ////////////////////////////////////
-//                    // SET THE POSITION OF THE VERTICIES
-//                    ////////////////////////////////////
-//
-//                    FbxVector4 pos = fbxMesh->GetControlPointAt(ctrlPointIdx);
-//                    pGeometry->positions.emplace_back(
-//                        static_cast<float>(pos[0]),
-//                        static_cast<float>(pos[1]),
-//                        static_cast<float>(pos[2])
-//                    );
-//
-//                    ///////////////////////////////////////
-//                    // SET THE UV POSITION OF THE VERTICIES
-//                    ///////////////////////////////////////
-//
-//                    if (uvName)
-//                    {
-//                        FbxVector2 uv;
-//                        bool unmapped;
-//                        fbxMesh->GetPolygonVertexUV(polyIdx, vertIdx, uvName, uv, unmapped);
-//                        //////////////
-//                        //INVERT THE V
-//                        //////////////
-//                        pGeometry->UVs.emplace_back(static_cast<float>(uv[0]), 1.0f - static_cast<float>(uv[1]));
-//                    }
-//                    else
-//                    {
-//                        pGeometry->UVs.emplace_back(0.0f, 0.0f);
-//                    }
-//
-//                    //////////////////////////////////
-//                    // SET THE NORMAL OF THE VERTICIES
-//                    //////////////////////////////////
-//
-//                    FbxVector4 n;
-//                    if (fbxMesh->GetPolygonVertexNormal(polyIdx, vertIdx, n))
-//                    {
-//                        pGeometry->normals.emplace_back(
-//                            static_cast<float>(n[0]),
-//                            static_cast<float>(n[1]),
-//                            static_cast<float>(n[2])
-//                        );
-//                    }
-//                    else
-//                    {
-//                        pGeometry->normals.emplace_back(0.0f, 0.0f, 0.0f);
-//                    }
-//
-//                    /////////////////////////////////
-//                    // SET THE COLOR OF THE VERTICIES
-//                    /////////////////////////////////
-//
-//                    pGeometry->colors.push_back({ color.r, color.g, color.b, color.a });
-//
-//                    ////////////////////////////////////
-//                    // SET THE INDICIES OF THE VERTICIES
-//                    ////////////////////////////////////
-//
-//                    pGeometry->indicies.push_back(static_cast<uint32>(pGeometry->positions.size() - 1));
-//                }
-//            }
-//        }
-//    }
-//
-//    pGeometry->indexNumber = static_cast<uint32>(pGeometry->indicies.size());
-//
-//    importer->Destroy();
-//    ios->Destroy();
-//    manager->Destroy();
-//
-//    return pGeometry;
-//}
+#include <Render/Header/FbxFactory.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postProcess.h>
+
+SceneData FbxFactory::LoadFbxFile(const char* filePath)
+{
+	return SceneData();
+}
+
+void FbxFactory::EnsureVertexBoneWeights(Mesh& mesh)
+{
+	if (mesh.boneWeights.size() != mesh.positions.size())
+	{
+		mesh.boneWeights.assign(mesh.positions.size(), {});
+	}
+}
+
+int32 FbxFactory::BuildNodeRecursive(const aiNode* pAiNode, int32 parentIndex, SceneData& out, std::unordered_map<const aiNode*, int32>& mapPtrToIndex)
+{
+	Node node;
+	node.name = pAiNode->mName.C_Str();
+	node.transform = AiMatrixToMatrix4x4(pAiNode->mTransformation);
+	node.parent = parentIndex;
+	int myIndex = static_cast<int32>(out.nodes.size());
+	out.nodes.push_back(node);
+	mapPtrToIndex[pAiNode] = myIndex;
+
+	for (uint32 i = 0; i < pAiNode->mNumChildren; i++)
+	{
+		int32 childIndex = BuildNodeRecursive(pAiNode->mChildren[i], myIndex, out, mapPtrToIndex);
+		out.nodes[myIndex].children.push_back(childIndex);
+	}
+
+	return myIndex;
+}
+
+void FbxFactory::ProcessMeshes(const aiScene* pAiScene, SceneData& out, const std::unordered_map<const aiNode*, int32>& nodeMap)
+{
+	out.meshes.reserve(pAiScene->mNumMeshes);
+	
+	for (uint32 m = 0; m < pAiScene->mNumMeshes; ++m)
+	{
+		aiMesh* am = pAiScene->mMeshes[m];
+		Mesh mesh;
+		mesh.name = am->mName.C_Str();
+		mesh.materialIndex = static_cast<int32>(am->mMaterialIndex);
+
+		// Process vertices
+		mesh.positions.resize(am->mNumVertices);
+		for (uint32 i = 0; i < am->mNumVertices; ++i)
+		{
+			mesh.positions[i] = Vector3(am->mVertices[i].x, am->mVertices[i].y, am->mVertices[i].z);
+		}
+
+		if (am->HasNormals())
+		{
+			mesh.normals.resize(am->mNumVertices);
+			for (uint32 i = 0; i < am->mNumVertices; ++i)
+			{
+				mesh.normals[i] = Vector3(am->mNormals[i].x, am->mNormals[i].y, am->mNormals[i].z);
+			}
+		}
+		if (am->HasTangentsAndBitangents())
+		{
+			mesh.tangentes.resize(am->mNumVertices);
+			for (uint32 i = 0; i < am->mNumVertices; ++i)
+			{
+				mesh.tangentes[i] = Vector3(am->mTangents[i].x, am->mTangents[i].y, am->mTangents[i].z);
+			}
+		}
+		if (am->HasTextureCoords(0))
+		{
+			mesh.uvs0.resize(am->mNumVertices);
+			for (uint32 i = 0; i < am->mNumVertices; ++i)
+			{
+				mesh.uvs0[i] = Vector3(am->mTextureCoords[0][i].x, am->mTextureCoords[0][i].y, 0.0f);
+			}
+		}
+
+		// Process indices
+		for (uint32 f = 0; f < am->mNumFaces; ++f)
+		{
+			aiFace& face = am->mFaces[f];
+			for (uint32 idx = 0; idx < face.mNumIndices; ++idx)
+			{
+				mesh.indices.push_back(face.mIndices[idx]);
+			}
+		}
+
+		mesh.boneWeights.resize(mesh.positions.size());
+		if (am->HasBones())
+		{
+			for (uint32 b = 0; b < am->mNumBones; ++b)
+			{
+				aiBone* ab = am->mBones[b];
+			}
+		}
+
+		out.meshes.push_back(std::move(mesh));
+	}
+}
+
+void FbxFactory::ProcessMaterials(const aiScene* pAiScene, SceneData& out)
+{
+}
+
+void FbxFactory::ProcessBonesAndWeights(const aiScene* pAiScene, SceneData& out, const std::unordered_map<const aiNode*, int32>& nodeMap)
+{
+}
+
+void FbxFactory::ProcessAnimations(const aiScene* pAiScene, SceneData& out)
+{
+}
+
+void FbxFactory::ProcessCamerasAndLights(const aiScene* pAiScene, SceneData& out)
+{
+}
+
+void FbxFactory::PrintSummary(const SceneData& scene)
+{
+}
+
+Matrix4x4 FbxFactory::AiMatrixToMatrix4x4(const aiMatrix4x4& aiMat)
+{
+	Matrix4x4 mat;
+
+	mat.m[0][0] = aiMat.a1; mat.m[0][1] = aiMat.b1; mat.m[0][2] = aiMat.c1; mat.m[0][3] = aiMat.d1;
+	mat.m[1][0] = aiMat.a2; mat.m[1][1] = aiMat.b2; mat.m[1][2] = aiMat.c2; mat.m[1][3] = aiMat.d2;
+	mat.m[2][0] = aiMat.a3; mat.m[2][1] = aiMat.b3; mat.m[2][2] = aiMat.c3; mat.m[2][3] = aiMat.d3;
+	mat.m[3][0] = aiMat.a4; mat.m[3][1] = aiMat.b4; mat.m[3][2] = aiMat.c4; mat.m[3][3] = aiMat.d4;
+
+	return mat;
+}
