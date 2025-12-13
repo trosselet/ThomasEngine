@@ -79,7 +79,10 @@ Texture::Texture(std::string& path, GraphicEngine* pGraphic) : m_pTexture(nullpt
     if (!data)
     {
         Utils::DebugError("Failed to load image: ", path.c_str());
-        return;
+
+		std::string errorPath = TEXTURE_PATH + std::string("DefaultTex.png");
+
+        data = stbi_load(errorPath.c_str(), &m_width, &m_height, &m_channels, 4);
     }
 
     m_channels = 4;

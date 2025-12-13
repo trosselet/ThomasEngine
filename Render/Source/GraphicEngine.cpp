@@ -86,14 +86,14 @@ ObjModel* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char
 		return ObjFactory::LoadObjFile(meshPath, color);
 	else if (strcmp(extension, ".fbx") == 0)
 	{
-		FbxParser::SceneData& sceneData = FbxFactory::LoadFbxFile(meshPath);
+		FbxParser::SceneData* pSceneData = FbxFactory::LoadFbxFile(meshPath);
 		ObjModel* pObjModel = NEW ObjModel();
 
-		for (const FbxParser::Mesh& mesh : sceneData.meshes)
+		for (const FbxParser::Mesh& mesh : pSceneData->meshes)
 		{
 			ObjSubMesh subMesh;
 
-			const FbxParser::Material& mat = sceneData.materials[mesh.materialIndex];
+			const FbxParser::Material& mat = pSceneData->materials[mesh.materialIndex];
 
 			subMesh.material.diffuseColor = Vector3
 			{

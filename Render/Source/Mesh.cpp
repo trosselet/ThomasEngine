@@ -79,9 +79,9 @@ void Mesh::UploadGeometry(bool deferred)
     bool hasUv = !m_pGeometry->UVs.empty();
     bool hasNormal = !m_pGeometry->normals.empty();
 
-    if (hasColor) floatStride += 4;
-    if (hasUv)    floatStride += 2;
-    if (hasNormal)floatStride += 3;
+    floatStride += 4;
+    floatStride += 2;
+    floatStride += 3;
 
     size_t vertexCount = m_pGeometry->positions.size();
     geometryData.reserve(vertexCount * floatStride);
@@ -109,6 +109,13 @@ void Mesh::UploadGeometry(bool deferred)
                 geometryData.push_back(m_pGeometry->colors[i].w);
             }
         }
+        else
+        {
+            geometryData.push_back(1.0f);
+            geometryData.push_back(1.0f);
+            geometryData.push_back(1.0f);
+            geometryData.push_back(1.0f);
+        }
 
         if (hasUv)
         {
@@ -122,6 +129,11 @@ void Mesh::UploadGeometry(bool deferred)
                 geometryData.push_back(m_pGeometry->UVs[i].x);
                 geometryData.push_back(m_pGeometry->UVs[i].y);
             }
+        }
+        else
+        {
+            geometryData.push_back(0.0f);
+			geometryData.push_back(0.0f);
         }
 
         if (hasNormal)
@@ -138,6 +150,12 @@ void Mesh::UploadGeometry(bool deferred)
                 geometryData.push_back(m_pGeometry->normals[i].y);
                 geometryData.push_back(m_pGeometry->normals[i].z);
             }
+        }
+        else
+        {
+            geometryData.push_back(0.0f);
+            geometryData.push_back(0.0f);
+			geometryData.push_back(1.0f);
         }
     }
 

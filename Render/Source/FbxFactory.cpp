@@ -5,11 +5,16 @@
 #include <assimp/scene.h>
 #include <assimp/postProcess.h>
 
+#include <Render/ext/stb_image.h>
+
+#include <filesystem>
+#include <fstream>
+
 using namespace FbxParser;
 
-SceneData& FbxFactory::LoadFbxFile(const char* filePath)
+SceneData* FbxFactory::LoadFbxFile(const char* filePath)
 {
-	SceneData out = {};
+	SceneData* out = NEW SceneData();
 	Assimp::Importer importer;
 	uint32 importFlags =
 		aiProcess_Triangulate |
@@ -31,16 +36,16 @@ SceneData& FbxFactory::LoadFbxFile(const char* filePath)
 	}
 
 	std::unordered_map<const aiNode*, int32> nodeMap;
-	out.nodes.clear();
-	BuildNodeRecursive(pAiScene->mRootNode, -1, out, nodeMap);
+	out->nodes.clear();
+	BuildNodeRecursive(pAiScene->mRootNode, -1, *out, nodeMap);
 
-	ProcessMaterials(pAiScene, out);
-	ProcessMeshes(pAiScene, out, nodeMap);
-	ProcessBonesAndWeights(pAiScene, out, nodeMap);
-	ProcessAnimations(pAiScene, out);
-	ProcessCamerasAndLights(pAiScene, out);
+	ProcessMaterials(pAiScene, *out);
+	ProcessMeshes(pAiScene, *out, nodeMap);
+	ProcessBonesAndWeights(pAiScene, *out, nodeMap);
+	ProcessAnimations(pAiScene, *out);
+	ProcessCamerasAndLights(pAiScene, *out);
 
-	PrintSummary(out);
+	PrintSummary(*out);
 
 	return out;
 }
@@ -138,39 +143,70 @@ void FbxFactory::ProcessMeshes(const aiScene* pAiScene, SceneData& out, const st
 	}
 }
 
-void FbxFactory::ProcessMaterials(const aiScene* pAiScene, SceneData& out)
+std::string FbxFactory::SaveEmbeddedTexture(const aiScene* pScene, const aiString& texPath, const std::string& outFolder)
 {
-	out.materials.reserve(pAiScene->mNumMaterials);
-
-	for (uint32 i = 0; i < pAiScene->mNumMaterials; ++i)
 	{
-		aiMaterial* am = pAiScene->mMaterials[i];
+		if (texPath.length == 0 || texPath.C_Str()[0] != '*')
+			return {};
+
+		int index = atoi(texPath.C_Str() + 1);
+		if (index < 0 || index >= (int)pScene->mNumTextures)
+			return {};
+
+		const aiTexture* tex = pScene->mTextures[index];
+
+		if (tex->mHeight == 0)
+		{
+			std::string ext = tex->achFormatHint;
+
+			if (ext.empty())
+				ext = "bin";
+
+			std::string outName = "embedded_" + std::to_string(index) + "." + ext;
+			std::string fullPath = outFolder + "/" + outName;
+
+			std::ofstream file(fullPath, std::ios::binary);
+			file.write((const char*)tex->pcData, tex->mWidth);
+
+			return fullPath;
+		}
+
+		Utils::DebugWarning("Can't save the embedded texture: ", texPath.C_Str());
+
+		return {};
+	}
+}
+
+void FbxFactory::ProcessMaterials(const aiScene* scene, SceneData& out)
+{
+	std::filesystem::create_directories("textures");
+
+	out.materials.reserve(scene->mNumMaterials);
+
+	for (uint32 i = 0; i < scene->mNumMaterials; ++i)
+	{
+		aiMaterial* am = scene->mMaterials[i];
 		Material material;
+
 		aiString name;
 		if (AI_SUCCESS == am->Get(AI_MATKEY_NAME, name))
-		{
 			material.name = name.C_Str();
-		}
+
 		aiColor3D color;
 		if (AI_SUCCESS == am->Get(AI_MATKEY_COLOR_DIFFUSE, color))
-		{
 			material.diffuseColor = Vector3(color.r, color.g, color.b);
-		}
+
 		if (AI_SUCCESS == am->Get(AI_MATKEY_COLOR_SPECULAR, color))
-		{
 			material.specularColor = Vector3(color.r, color.g, color.b);
-		}
+
 		if (AI_SUCCESS == am->Get(AI_MATKEY_COLOR_AMBIENT, color))
-		{
 			material.ambientColor = Vector3(color.r, color.g, color.b);
-		}
+
 		float shininess;
 		if (AI_SUCCESS == am->Get(AI_MATKEY_SHININESS, shininess))
-		{
 			material.shininess = shininess;
-		}
 
-		aiTextureType textureTypes[] = {
+		aiTextureType texTypes[] = {
 			aiTextureType_DIFFUSE,
 			aiTextureType_SPECULAR,
 			aiTextureType_NORMALS,
@@ -178,32 +214,40 @@ void FbxFactory::ProcessMaterials(const aiScene* pAiScene, SceneData& out)
 			aiTextureType_EMISSIVE
 		};
 
-		const char* texKeys[] = 
-		{
-			"diffuse",
-			"specular",
-			"normal",
-			"height",
-			"emissive"
+		const char* texKeys[] = {
+			"diffuse", "specular", "normal", "height", "emissive"
 		};
 
-		for (size_t t = 0; t < sizeof(textureTypes) / sizeof(textureTypes[0]); ++t)
+		for (size_t t = 0; t < 5; ++t)
 		{
-			aiTextureType texType = textureTypes[t];
+			aiTextureType texType = texTypes[t];
 			unsigned int texCount = am->GetTextureCount(texType);
-			if (texCount > 0)
+
+			if (texCount == 0)
+				continue;
+
+			aiString texPath;
+			if (AI_SUCCESS == am->GetTexture(texType, 0, &texPath))
 			{
-				aiString texPath;
-				if (AI_SUCCESS == am->GetTexture(texType, 0, &texPath))
+				std::string texStr = texPath.C_Str();
+
+				if (!texStr.empty() && texStr[0] == '*')
 				{
-					material.textures[texKeys[t]] = texPath.C_Str();
+					std::string saved = SaveEmbeddedTexture(scene, texPath, "textures");
+					if (!saved.empty())
+					{
+						material.textures[texKeys[t]] = saved;
+					}
+				}
+				else
+				{
+					material.textures[texKeys[t]] = texStr;
 				}
 			}
 		}
 
 		out.materials.push_back(std::move(material));
 	}
-
 }
 
 void FbxFactory::ProcessBonesAndWeights(const aiScene* pAiScene, SceneData& out, const std::unordered_map<const aiNode*, int32>& nodeMap)

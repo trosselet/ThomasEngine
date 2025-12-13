@@ -12,6 +12,7 @@
 #include <Render/Header/GraphicEngine.h>
 #include <Render/Header/Window.h>
 #include <Render/Header/ObjModel.h>
+#include <Render/Header/FbxFactory.h>
 
 
 #include <Tools/Header/Color.h>

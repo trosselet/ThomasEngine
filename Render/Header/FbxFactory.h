@@ -117,13 +117,14 @@ namespace FbxParser
 class FbxFactory
 {
 public:
-	static FbxParser::SceneData& LoadFbxFile(const char* filePath);
+	static FbxParser::SceneData* LoadFbxFile(const char* filePath);
 
 
 private:
 	static void EnsureVertexBoneWeights(FbxParser::Mesh& mesh);
 	static int32 BuildNodeRecursive(const aiNode* pAiNode, int32 parentIndex, FbxParser::SceneData& out, std::unordered_map<const aiNode*, int32>& mapPtrToIndex);
 	static void ProcessMeshes(const aiScene* pAiScene, FbxParser::SceneData& out, const std::unordered_map<const aiNode*, int32>& nodeMap);
+	static std::string SaveEmbeddedTexture(const aiScene* pScene, const aiString& texPath, const std::string& outFolder);
 	static void ProcessMaterials(const aiScene* pAiScene, FbxParser::SceneData& out);
 	static void ProcessBonesAndWeights(const aiScene* pAiScene, FbxParser::SceneData& out, const std::unordered_map<const aiNode*, int32>& nodeMap);
 	static void ProcessAnimations(const aiScene* pAiScene, FbxParser::SceneData& out);

@@ -101,6 +101,8 @@ float4 psmain(VSOutput input) : SV_TARGET
 
     float3 lit = ComputeLighting(N, V, diffuseTex.rgb, specularTex.rgb);
     
-    return float4(lit * albedo, diffuseTex.a);
+    //return float4(lit * albedo, diffuseTex.a);
+    
+    return diffuseTex;
 }
 

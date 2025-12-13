@@ -54,18 +54,18 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
         pSphere1->SetName("Sphere1");
     }*/
    
-    GameObject* const pCircle1 = NEW GameObject(scene);
+    /*GameObject* const pCircle1 = NEW GameObject(scene);
     pCircle1->transform.SetPosition({ 3.0f, 0.0f, 5.0f });
     MeshRenderer& pCircle1MeshRendererTest = pCircle1->AddComponent<MeshRenderer>();
     pCircle1MeshRendererTest.SetCircle(Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pCircle1MeshRendererTest.SetColor(Color::Blue);
-    pCircle1->SetName("Circle1");
+    pCircle1->SetName("Circle1");*/
    
-    GameObject* const pCube1 = NEW GameObject(scene);
+    /*GameObject* const pCube1 = NEW GameObject(scene);
     pCube1->transform.SetPosition({ -1.5f, 0.0f, 5.0f });
     MeshRenderer& pCube1MeshRendererTest = pCube1->AddComponent<MeshRenderer>();
     pCube1MeshRendererTest.SetCube("wood.jpg", Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
-    pCube1->SetName("Cube");
+    pCube1->SetName("Cube");*/
 
     GameObject* const pSky = NEW GameObject(scene);
     pSky->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
@@ -75,19 +75,19 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pSkyMeshRendererTest.SetSphere("sky.jpg", Color::White, static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite | Utils::PSOFlags::CullFront));
     pSky->SetName("Sky");
 
-    GameObject* const pObj = NEW GameObject(scene);
+    /*GameObject* const pObj = NEW GameObject(scene);
     pObj->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
     pObj->transform.SetScaling(Vector3{ 0.1f, 0.1f, 0.1f });
     MeshRenderer& pObjMeshRendererTest = pObj->AddComponent<MeshRenderer>();
     pObjMeshRendererTest.SetMeshFile("Female/Female.obj", static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
-    pObj->SetName("Obj");
+    pObj->SetName("Obj");*/
 
     GameObject* const pObj1 = NEW GameObject(scene);
-    pObj1->transform.SetPosition({ 5.0f, 0.0f, 0.0f });
-    pObj1->transform.RotateYPR({ 0.0f, 55.0f, 0.0f });
-    pObj1->transform.SetScaling(Vector3{ 1.f, 1.f, 1.f });
+    pObj1->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
+    pObj1->transform.RotateCartesian({ 0.0f, 0.0f, 0.0f });
+    pObj1->transform.SetScaling(Vector3{ 0.01f, 0.01f, 0.01f });
     MeshRenderer& pObj1MeshRendererTest = pObj1->AddComponent<MeshRenderer>();
-    pObj1MeshRendererTest.SetMeshFile("Wolf.fbx");
+    pObj1MeshRendererTest.SetMeshFile("Dying.fbx");
     pObj1->SetName("Obj2");
 
     GameManager::Run();
