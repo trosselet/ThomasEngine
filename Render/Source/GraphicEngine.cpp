@@ -127,9 +127,7 @@ ObjModel* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char
 			if (mat.textures.count("specular"))
 				subMesh.material.specularTexturePath = mat.textures.at("specular");
 
-			subMesh.geometry = NEW Geometry();
-
-			Geometry* geo = subMesh.geometry;
+			Geometry* geo = &subMesh.geometry;
 
 			geo->positions.reserve(mesh.positions.size());
 			for (const Vector3& p : mesh.positions)
@@ -146,8 +144,10 @@ ObjModel* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char
 			geo->indicies = mesh.indices;
 			geo->indexNumber = (uint32)mesh.indices.size();
 
-			pObjModel->subMeshes.push_back(std::move(subMesh));
+			pObjModel->subMeshes.push_back(subMesh);
 		}
+
+		delete pSceneData;
 
 		return pObjModel;
 	}

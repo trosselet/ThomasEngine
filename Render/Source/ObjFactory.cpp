@@ -82,7 +82,7 @@ ObjModel* ObjFactory::LoadObjFile(const char* filePath, Color color)
         }
 
         geom->indexNumber = (uint32)geom->indicies.size();
-        subMesh.geometry = geom;
+        subMesh.geometry = *geom;
 
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
         std::string extension;

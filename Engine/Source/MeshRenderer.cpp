@@ -175,7 +175,7 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultT
 	GameObject* pParentObj = m_pOwner;
 	ObjSubMesh& firstSubMesh = pObjModel->subMeshes[0];
 
-	m_pGeometry = firstSubMesh.geometry;
+	m_pGeometry = &firstSubMesh.geometry;
 
 	Texture* pTexture = nullptr;
 
@@ -261,7 +261,7 @@ void MeshRenderer::SetMeshFileInternal(const char* objPath, const char* defaultT
 		pParentObj->AddChild(pChildObj);
 		MeshRenderer& childMR = pChildObj->AddComponent<MeshRenderer>();
 
-		childMR.m_pGeometry = subMesh.geometry;
+		childMR.m_pGeometry = &subMesh.geometry;
 		childMR.m_ownsGeometry = false;
 
 		std::string childTexPath = subMesh.material.diffuseTexturePath;

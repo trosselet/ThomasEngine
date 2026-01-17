@@ -6,7 +6,8 @@
 
 #include <Tools/Header/Color.h>
 
-struct Geometry;
+#include <Render/Header/Geometry.h>
+
 class Texture;
 
 struct ObjMaterial
@@ -23,7 +24,7 @@ struct ObjMaterial
 
 struct ObjSubMesh
 {
-    Geometry* geometry = nullptr;
+    Geometry geometry;
 
 	Texture* diffuseTexture = nullptr;
 	Texture* normalTexture = nullptr;
