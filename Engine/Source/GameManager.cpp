@@ -110,6 +110,10 @@ void GameManager::SetWireframe(bool wireframe)
 
 void GameManager::GameLoop()
 {
+	float m_secondCounter = 0;
+	float m_tempFps = 0;
+	float fps = 0;
+
 	while (m_pWindow->IsOpen())
 	{
 		auto now = std::chrono::steady_clock::now();
@@ -118,7 +122,18 @@ void GameManager::GameLoop()
 
 		m_deltaTime = frameTime.count();
 
-		printf("\033[%d;%dH\033[2K  [ENGINE] Frame Time: %f", 1, 0, m_deltaTime);
+		if (m_secondCounter <= 1) {
+			m_secondCounter += m_deltaTime;
+			m_tempFps++;
+		}
+		else
+		{ 
+			fps = m_tempFps;
+			m_secondCounter = 0;
+			m_tempFps = 0;
+		}
+
+		printf("\033[%d;%dH\033[2K  [ENGINE] Frame Time: %d fps", 1, 0, static_cast<int>(fps));
 
 		m_accumulator += m_deltaTime;
 
