@@ -126,49 +126,49 @@ void GameManager::GameLoop()
 		// Update //
 		////////////
 
-		float updateStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float updateStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		Update();
-		float updateEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float updateEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		printf("\033[%d;%dH\033[2K  [ENGINE] Update time: %f", 2, 0, updateEndTime - updateStartTime);
 
 		//////////////////////
 		// Handle Creations //
 		//////////////////////
 
-		float handleCreationStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float handleCreationStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		HandleCreations();
-		float handleCreationEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float handleCreationEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		printf("\033[%d;%dH\033[2K  [ENGINE] Handle Creation time: %f", 3, 0, handleCreationEndTime - handleCreationStartTime);
 
 		//////////////////////
 		// Handle Deletions //
 		//////////////////////
 
-		float handleDeletionStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float handleDeletionStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		HandleDeletions();
-		float handleDeletionEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float handleDeletionEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		printf("\033[%d;%dH\033[2K  [ENGINE] Handle Deletion time: %f", 4, 0, handleDeletionEndTime - handleDeletionStartTime);
 
 		//////////////////
 		// Fixed Update //
 		//////////////////
 
-		float fixedUpdateStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float fixedUpdateStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		while (m_accumulator >= m_fixedDeltaTime)
 		{
 			FixedUpdate();
 			m_accumulator -= m_fixedDeltaTime;
 		}
-		float fixedUpdateEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float fixedUpdateEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		printf("\033[%d;%dH\033[2K  [ENGINE] FixedUpdate time: %f", 5, 0, fixedUpdateEndTime - fixedUpdateStartTime);
 
 		///////////////////
 		// Script Update //
 		///////////////////
 
-		float scriptUpdateStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float scriptUpdateStartTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		m_pScriptSystem->OnUpdate();
-		float scriptUpdateEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
+		float scriptUpdateEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count()) / 1'000'000.0f;
 		printf("\033[%d;%dH\033[2K  [ENGINE] Script Update time: %f", 6, 0, scriptUpdateEndTime - scriptUpdateStartTime);
 
 		///////////////
@@ -250,11 +250,11 @@ void GameManager::RenderThreadFunc()
 
 		m_pRenderSystem->Rendering();
 
-		float renderEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - startTime).count()) / 1'000'000.0f;
+		float renderEndTime = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count()) / 1'000'000.0f;
 
-		printf("\033[%d;%dH\033[2K  [ENGINE] Rendering time: %f", 10, 0, renderEndTime);
-		printf("\033[%d;%dH\033[2K  [ENGINE] Scene object number: %d", 11, 0, (int)GetActiveScene().GetGameObjects().size());
+		printf("\033[%d;%dH\033[2K  [RENDER] Rendering time: %f", 10, 0, renderEndTime);
+		printf("\033[%d;%dH\033[2K  [RENDER] Scene object number: %d", 11, 0, (int)GetActiveScene().GetGameObjects().size());
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(0));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(0));
 	}
 }

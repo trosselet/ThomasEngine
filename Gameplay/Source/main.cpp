@@ -82,13 +82,16 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pObjMeshRendererTest.SetMeshFile("Female/Female.obj", static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pObj->SetName("Obj");*/
 
-    GameObject* const pObj1 = NEW GameObject(scene);
-    pObj1->transform.SetPosition({ 0.0f, 0.0f, 0.0f });
-    pObj1->transform.RotateCartesian({ 0.0f, 0.0f, 0.0f });
-    pObj1->transform.SetScaling(Vector3{ 0.01f, 0.01f, 0.01f });
-    MeshRenderer& pObj1MeshRendererTest = pObj1->AddComponent<MeshRenderer>();
-    pObj1MeshRendererTest.SetMeshFile("Dying.fbx");
-    pObj1->SetName("Obj2");
+    for (int i = 0; i < 100; i+=10)
+    {
+        GameObject* const pObj1 = NEW GameObject(scene);
+        pObj1->transform.SetPosition({ i + 0.0f, 0.0f, 0.0f });
+        pObj1->transform.RotateCartesian({ 0.0f, 0.0f, 0.0f });
+        pObj1->transform.SetScaling(Vector3{ 0.01f, 0.01f, 0.01f });
+        MeshRenderer& pObj1MeshRendererTest = pObj1->AddComponent<MeshRenderer>();
+        pObj1MeshRendererTest.SetMeshFile("Dying.fbx");
+        pObj1->SetName("Obj2");
+    }
 
     GameManager::Run();
     GameManager::Release();
