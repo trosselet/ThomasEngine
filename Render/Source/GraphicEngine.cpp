@@ -1,304 +1,276 @@
 #include <Render/pch.h>
-
 #include <Render/Header/GraphicEngine.h>
-#include <Render/Header/Window.h>
-#include <Render/Header/Render.h>
 #include <Render/Header/RenderTarget.h>
-
-#include <Render/Header/PrimitiveGeometry.h>
-#include <Render/Header/Geometry.h>
-
+#include <Render/Header/Render.h>
 #include <Render/Header/RenderResources.h>
+#include <Render/Header/Window.h>
 #include <Render/Header/Mesh.h>
 #include <Render/Header/Material.h>
 #include <Render/Header/Texture.h>
+#include <Render/Header/PrimitiveGeometry.h>
+#include <Render/Header/Geometry.h>
+#include <Render/Header/UploadBuffer.h>
 #include <Render/Header/ObjFactory.h>
 #include <Render/Header/FbxFactory.h>
-#include <Render/Header/UploadBuffer.h>
 #include <Render/Header/ObjModel.h>
 
 GraphicEngine::GraphicEngine(const Window* pWindow)
 {
-	m_pRender = NEW Render(pWindow);
-    m_pOffscreenRT = NEW RenderTarget(m_pRender->GetRenderResources(), pWindow->GetWidth(), pWindow->GetHeight());
-    m_pRender->SetOffscreenRenderTarget(m_pOffscreenRT);
-	PrimitiveGeometry::InitializeGeometry();
-}
+    m_pRender = NEW Render(pWindow);
 
-UINT64 GraphicEngine::GetFrameCBAddress() const
-{
-    if (!m_pRender) return 0;
-    return m_pRender->m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress();
-}
+    RecreateOffscreenRT(pWindow->GetWidth(), pWindow->GetHeight());
 
-void GraphicEngine::BindFrameConstants()
-{
-    Render* r = m_pRender;
-    if (!r) return;
-    ID3D12GraphicsCommandList* cmd = r->GetRenderResources()->GetCommandList();
-    if (!cmd) return;
-    cmd->SetGraphicsRootConstantBufferView(0, r->m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
+    PrimitiveGeometry::InitializeGeometry();
 }
 
 GraphicEngine::~GraphicEngine()
 {
+    m_textureCache.Release();
+    m_geometryCache.Release();
+    m_objCache.Release();
+    m_meshCache.Release();
 
-	m_textureCache.Release();
-	m_geometryCache.Release();
-	m_objCache.Release();
-	m_meshCache.Release();
-
-	delete m_pRender;
+    if (m_pRender)
+    {
+        delete m_pRender;
+        m_pRender = nullptr;
+    }
 }
+
+// ------------------- Frame -------------------
 
 void GraphicEngine::BeginDraw()
 {
-	m_pRender->Clear();
+    if (m_pRender)
+        m_pRender->BeginFrame();
 }
 
 void GraphicEngine::RenderFrame(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix)
 {
-	m_pRender->Draw(pMesh, pMaterial, objectWorldMatrix);
+    if (m_pRender)
+        m_pRender->Draw(pMesh, pMaterial, objectWorldMatrix);
 }
 
 void GraphicEngine::Display()
 {
-	m_pRender->Display();
+    if (m_pRender)
+        m_pRender->EndFrame();
 }
+
+// ------------------- Geometry / Mesh -------------------
 
 Geometry* GraphicEngine::CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color)
 {
-	Geometry const* const pGeo = PrimitiveGeometry::GetPrimitiveGeometry(primitiveType);
-	Geometry* pResult = NEW Geometry();
-	*pResult = *pGeo;
+    Geometry const* const pGeo = PrimitiveGeometry::GetPrimitiveGeometry(primitiveType);
+    Geometry* pResult = NEW Geometry();
+    *pResult = *pGeo;
 
-	for (int i = 0; i < pResult->positions.size(); i++)
-	{
-		pResult->colors.push_back(DirectX::XMFLOAT4(color.r, color.g, color.b, color.a));
-	}
+    for (size_t i = 0; i < pResult->positions.size(); i++)
+        pResult->colors.push_back(DirectX::XMFLOAT4(color.r, color.g, color.b, color.a));
 
-	return pResult;
+    return pResult;
 }
 
 ObjModel* GraphicEngine::CreateGeometryFromFile(const char* meshPath, const char* extension, Color color)
 {
-	if (strcmp(extension, ".obj") == 0)
-		return ObjFactory::LoadObjFile(meshPath, color);
-	else if (strcmp(extension, ".fbx") == 0)
-	{
-		FbxParser::SceneData* pSceneData = FbxFactory::LoadFbxFile(meshPath);
-		ObjModel* pObjModel = NEW ObjModel();
+    if (strcmp(extension, ".obj") == 0)
+        return ObjFactory::LoadObjFile(meshPath, color);
+    else if (strcmp(extension, ".fbx") == 0)
+    {
+        FbxParser::SceneData* pSceneData = FbxFactory::LoadFbxFile(meshPath);
+        ObjModel* pObjModel = NEW ObjModel();
 
-		for (const FbxParser::Mesh& mesh : pSceneData->meshes)
-		{
-			ObjSubMesh subMesh;
+        for (const auto& mesh : pSceneData->meshes)
+        {
+            ObjSubMesh subMesh;
+            const auto& mat = pSceneData->materials[mesh.materialIndex];
 
-			const FbxParser::Material& mat = pSceneData->materials[mesh.materialIndex];
+            subMesh.material.diffuseColor = Vector3{ mat.diffuseColor.data[0], mat.diffuseColor.data[1], mat.diffuseColor.data[2] };
+            subMesh.material.specularColor = Vector3{ mat.specularColor.data[0], mat.specularColor.data[1], mat.specularColor.data[2] };
+            subMesh.material.ambientColor = Vector3{ mat.ambientColor.data[0], mat.ambientColor.data[1], mat.ambientColor.data[2] };
+            subMesh.material.shininess = mat.shininess;
 
-			subMesh.material.diffuseColor = Vector3
-			{
-				mat.diffuseColor.data[0],
-				mat.diffuseColor.data[1],
-				mat.diffuseColor.data[2]
-			};
+            if (mat.textures.count("diffuse")) subMesh.material.diffuseTexturePath = mat.textures.at("diffuse");
+            if (mat.textures.count("normals")) subMesh.material.normalTexturePath = mat.textures.at("normals");
+            if (mat.textures.count("specular")) subMesh.material.specularTexturePath = mat.textures.at("specular");
 
-			subMesh.material.specularColor = Vector3
-			{
-				mat.specularColor.data[0],
-				mat.specularColor.data[1],
-				mat.specularColor.data[2]
-			};
+            Geometry* geo = &subMesh.geometry;
+            geo->positions.reserve(mesh.positions.size());
+            for (const Vector3& p : mesh.positions)
+                geo->positions.emplace_back(XMFLOAT3(p.data[0], p.data[1], p.data[2]));
 
-			subMesh.material.ambientColor = Vector3
-			{
-				mat.ambientColor.data[0],
-				mat.ambientColor.data[1],
-				mat.ambientColor.data[2]
-			};
+            geo->normals.reserve(mesh.normals.size());
+            for (const Vector3& n : mesh.normals)
+                geo->normals.emplace_back(XMFLOAT3(n.data[0], n.data[1], n.data[2]));
 
-			subMesh.material.shininess = mat.shininess;
+            geo->UVs.reserve(mesh.uvs0.size());
+            for (const Vector3& uv : mesh.uvs0)
+                geo->UVs.emplace_back(XMFLOAT2(uv.data[0], uv.data[1]));
 
-			if (mat.textures.count("diffuse"))
-				subMesh.material.diffuseTexturePath = mat.textures.at("diffuse");
+            geo->indicies = mesh.indices;
+            geo->indexNumber = static_cast<uint32>(mesh.indices.size());
 
-			if (mat.textures.count("normals"))
-				subMesh.material.normalTexturePath = mat.textures.at("normals");
+            pObjModel->subMeshes.push_back(subMesh);
+        }
 
-			if (mat.textures.count("specular"))
-				subMesh.material.specularTexturePath = mat.textures.at("specular");
+        delete pSceneData;
+        return pObjModel;
+    }
 
-			Geometry* geo = &subMesh.geometry;
-
-			geo->positions.reserve(mesh.positions.size());
-			for (const Vector3& p : mesh.positions)
-				geo->positions.emplace_back(XMFLOAT3(p.data[0], p.data[1], p.data[2]));
-
-			geo->normals.reserve(mesh.normals.size());
-			for (const Vector3& n : mesh.normals)
-				geo->normals.emplace_back(XMFLOAT3(n.data[0], n.data[1], n.data[2]));
-
-			geo->UVs.reserve(mesh.uvs0.size());
-			for (const Vector3& uv : mesh.uvs0)
-				geo->UVs.emplace_back(XMFLOAT2(uv.data[0], uv.data[1]));
-
-			geo->indicies = mesh.indices;
-			geo->indexNumber = (uint32)mesh.indices.size();
-
-			pObjModel->subMeshes.push_back(subMesh);
-		}
-
-		delete pSceneData;
-
-		return pObjModel;
-	}
-
-	return nullptr;
+    return nullptr;
 }
 
 Mesh* GraphicEngine::CreateMesh(Geometry* pGeometry)
 {
-	m_pRender->GetRenderResources()->ResetCommandList();
-	Mesh* mesh = NEW Mesh(pGeometry, m_pRender);
-	m_pRender->GetRenderResources()->GetCommandList()->Close();
-	m_pRender->GetRenderResources()->ExecuteCommandList();
-	m_pRender->GetRenderResources()->FlushQueue();
-	mesh->ReleaseUploadBuffers();
-	return mesh;
+    m_pRender->GetRenderResources()->ResetCommandList();
+    Mesh* mesh = NEW Mesh(pGeometry, m_pRender);
+    m_pRender->GetRenderResources()->GetCommandList()->Close();
+    m_pRender->GetRenderResources()->ExecuteCommandList();
+    m_pRender->GetRenderResources()->FlushQueue();
+    mesh->ReleaseUploadBuffers();
+    return mesh;
 }
 
 Material* GraphicEngine::CreateMaterial(uint32 psoFlag)
 {
-	return NEW Material(m_pRender, psoFlag);
+    return NEW Material(m_pRender, psoFlag);
 }
 
 Texture* GraphicEngine::CreateTexture(std::string& filePath, const char* extension)
 {
-	m_pRender->GetRenderResources()->ResetCommandList();
+    m_pRender->GetRenderResources()->ResetCommandList();
+    Texture* pTexture = nullptr;
+    if (strcmp(extension, ".dds") == 0)
+        pTexture = NEW Texture(filePath.c_str(), this);
+    else
+        pTexture = NEW Texture(filePath, this);
 
-	Texture* pTexture = nullptr;
-
-	if (strcmp(extension, ".dds") == 0)
-	{
-		pTexture = NEW Texture(filePath.c_str(), this);
-	}
-	else
-	{
-		pTexture = NEW Texture(filePath, this);
-	}
-
-	m_pRender->GetRenderResources()->GetCommandList()->Close();
-	m_pRender->GetRenderResources()->ExecuteCommandList();
-	m_pRender->GetRenderResources()->FlushQueue();
-	return pTexture;
+    m_pRender->GetRenderResources()->GetCommandList()->Close();
+    m_pRender->GetRenderResources()->ExecuteCommandList();
+    m_pRender->GetRenderResources()->FlushQueue();
+    return pTexture;
 }
 
 void GraphicEngine::SetColor(Geometry* pGeometry, Color c)
 {
-	if (pGeometry != nullptr)
-	{
-		pGeometry->colors.clear();
-	}
-	else
-	{
-		return;
-	}
-
-	for (int i = 0; i < pGeometry->positions.size(); i++)
-	{
-		pGeometry->colors.push_back(DirectX::XMFLOAT4(c.r, c.g, c.b, c.a));
-	}
+    if (!pGeometry) return;
+    pGeometry->colors.clear();
+    for (size_t i = 0; i < pGeometry->positions.size(); i++)
+        pGeometry->colors.push_back(DirectX::XMFLOAT4(c.r, c.g, c.b, c.a));
 }
 
-void GraphicEngine::UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix)
+// ------------------- Camera -------------------
+
+void GraphicEngine::UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up,
+    float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar,
+    Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix)
 {
-	DirectX::XMFLOAT3 d12Position = DirectX::XMFLOAT3(position.ToXMFLOAT3());
-	DirectX::XMFLOAT3 d12Target = DirectX::XMFLOAT3(target.ToXMFLOAT3());
-	DirectX::XMFLOAT3 d12Up = DirectX::XMFLOAT3(up.ToXMFLOAT3());
+    DirectX::XMFLOAT3 d12Pos = DirectX::XMFLOAT3(position.ToXMFLOAT3());
+    DirectX::XMFLOAT3 d12Target = DirectX::XMFLOAT3(target.ToXMFLOAT3());
+    DirectX::XMFLOAT3 d12Up = DirectX::XMFLOAT3(up.ToXMFLOAT3());
 
-	DirectX::XMVECTOR camPos = XMLoadFloat3(&d12Position);
-	DirectX::XMVECTOR camTarget = XMLoadFloat3(&d12Target);
-	DirectX::XMVECTOR camUp = XMLoadFloat3(&d12Up);
+    DirectX::XMVECTOR camPos = XMLoadFloat3(&d12Pos);
+    DirectX::XMVECTOR camTarget = XMLoadFloat3(&d12Target);
+    DirectX::XMVECTOR camUp = XMLoadFloat3(&d12Up);
 
-	DirectX::XMMATRIX tempProj = DirectX::XMMatrixPerspectiveFovLH(fov, viewWidth / viewHeight, cNear, cFar);
-	DirectX::XMMATRIX tempView = DirectX::XMMatrixLookAtLH(camPos, camTarget, camUp);
+    DirectX::XMMATRIX tempProj = DirectX::XMMatrixPerspectiveFovLH(fov, viewWidth / viewHeight, cNear, cFar);
+    DirectX::XMMATRIX tempView = DirectX::XMMatrixLookAtLH(camPos, camTarget, camUp);
 
-	projectionMatrix = DirectX::XMMATRIX(DirectX::XMMatrixTranspose(tempProj));
-	viewMatrix = DirectX::XMMATRIX(DirectX::XMMatrixTranspose(tempView));
+    projectionMatrix = DirectX::XMMATRIX(DirectX::XMMatrixTranspose(tempProj));
+    viewMatrix = DirectX::XMMATRIX(DirectX::XMMatrixTranspose(tempView));
 
-	CameraCB camera = {};
-	DirectX::XMStoreFloat4x4(&camera.projectionMatrix, projectionMatrix);
-	DirectX::XMStoreFloat4x4(&camera.viewMatrix, viewMatrix);
+    CameraCB camera = {};
+    DirectX::XMStoreFloat4x4(&camera.projectionMatrix, projectionMatrix);
+    DirectX::XMStoreFloat4x4(&camera.viewMatrix, viewMatrix);
 
-	m_pRender->m_pCbCurrentViewProjInstance->CopyData(0, camera);
+    m_pRender->GetCameraCB()->CopyData(0, camera);
 }
 
-void GraphicEngine::UpdateCameraTo(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix)
+void GraphicEngine::UpdateCameraTo(Vector3 const& position, Vector3 const& target, Vector3 const& up,
+    float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar,
+    Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix)
 {
-	DirectX::XMFLOAT3 d12Position = DirectX::XMFLOAT3(position.ToXMFLOAT3());
-	DirectX::XMFLOAT3 d12Target = DirectX::XMFLOAT3(target.ToXMFLOAT3());
-	DirectX::XMFLOAT3 d12Up = DirectX::XMFLOAT3(up.ToXMFLOAT3());
-
-	DirectX::XMVECTOR camPos = XMLoadFloat3(&d12Position);
-	DirectX::XMVECTOR camTarget = XMLoadFloat3(&d12Target);
-	DirectX::XMVECTOR camUp = XMLoadFloat3(&d12Up);
-
-	DirectX::XMMATRIX tempProj = DirectX::XMMatrixPerspectiveFovLH(fov, viewWidth / viewHeight, cNear, cFar);
-	DirectX::XMMATRIX tempView = DirectX::XMMatrixLookAtLH(camPos, camTarget, camUp);
-
-	projectionMatrix = DirectX::XMMATRIX(DirectX::XMMatrixTranspose(tempProj));
-	viewMatrix = DirectX::XMMATRIX(DirectX::XMMatrixTranspose(tempView));
-
-	CameraCB camera = {};
-	DirectX::XMStoreFloat4x4(&camera.projectionMatrix, projectionMatrix);
-	DirectX::XMStoreFloat4x4(&camera.viewMatrix, viewMatrix);
-
-	m_pRender->m_pCbCurrentViewProjInstance->CopyData(0, camera);
+    UpdateCameraAt(position, target, up, viewWidth, viewHeight, fov, cNear, cFar, projectionMatrix, viewMatrix);
 }
+
+void GraphicEngine::BindFrameConstants()
+{
+    ID3D12GraphicsCommandList* cmd = m_pRender->GetRenderResources()->GetCommandList();
+    if (!cmd) return;
+    cmd->SetGraphicsRootConstantBufferView(0, m_pRender->GetCameraCB()->GetResource()->GetGPUVirtualAddress());
+}
+
+UINT64 GraphicEngine::GetFrameCBAddress() const
+{
+    return m_pRender ? m_pRender->GetCameraCB()->GetResource()->GetGPUVirtualAddress() : 0;
+}
+
+// ------------------- Deferred Mesh Uploads -------------------
 
 Mesh* GraphicEngine::CreateMeshDeferred(Geometry* pGeometry)
 {
-	Mesh* mesh = NEW Mesh(pGeometry, m_pRender, true);
-	m_pendingMeshUploads.push_back(mesh);
-	return mesh;
+    Mesh* mesh = NEW Mesh(pGeometry, m_pRender, true);
+    m_pendingMeshUploads.push_back(mesh);
+    return mesh;
 }
 
 void GraphicEngine::ProcessPendingUploads()
 {
-	if (m_pendingMeshUploads.empty()) return;
+    if (m_pendingMeshUploads.empty()) return;
 
-	auto* res = m_pRender->GetRenderResources();
-	res->ResetCommandList();
+    auto* res = m_pRender->GetRenderResources();
+    res->ResetCommandList();
 
-	for (Mesh* mesh : m_pendingMeshUploads)
-		mesh->UploadBuffersDeferred(res->GetCommandList());
+    for (Mesh* mesh : m_pendingMeshUploads)
+        mesh->UploadBuffersDeferred(res->GetCommandList());
 
-	res->GetCommandList()->Close();
-	res->ExecuteCommandList();
-	res->FlushQueue();
+    res->GetCommandList()->Close();
+    res->ExecuteCommandList();
+    res->FlushQueue();
 
-	for (Mesh* mesh : m_pendingMeshUploads)
-		mesh->ReleaseUploadBuffers();
+    for (Mesh* mesh : m_pendingMeshUploads)
+        mesh->ReleaseUploadBuffers();
 
-	m_pendingMeshUploads.clear();
+    m_pendingMeshUploads.clear();
 }
 
-Render* GraphicEngine::GetRender()
+// ------------------- RenderTarget access -------------------
+
+Render* GraphicEngine::GetRender() 
 {
-	return m_pRender;
+    return m_pRender;
 }
+
+RenderTarget* GraphicEngine::GetMainRenderTarget() const
+{
+    return m_pOffscreenRT;
+}
+
+std::vector<RenderTarget*> GraphicEngine::GetRenderTargets() const
+{
+    return { m_pOffscreenRT };
+}
+
+
+// ------------------- Offscreen RT -------------------
 
 void GraphicEngine::RecreateOffscreenRT(uint32 width, uint32 height)
 {
-	m_pRender->SetNeedsResizeRT();
+    if (!m_pRender) return;
 
-	WindowResizeInfo resizeInfo = {};
-	resizeInfo.width = width;
-	resizeInfo.height = height;
+    WindowResizeInfo resize = {};
+    resize.width = width;
+    resize.height = height;
 
-	m_pRender->SetResizeRT(resizeInfo);
+    m_pRender->RequestResizeRT(resize);
+    m_pOffscreenRT = m_pRender->GetOffscreenRenderTarget();
 }
+
+
+// ------------------- Wireframe -------------------
 
 void GraphicEngine::SetWireframe(bool wireframe)
 {
-	m_pRender->SetWireframe(wireframe);
+    if (m_pRender)
+        m_pRender->SetWireframe(wireframe);
 }

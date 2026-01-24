@@ -3,7 +3,6 @@
 
 #include <Tools/Header/Color.h>
 #include <DirectXMath.h>
-
 #include <Render/Header/ResourcesCache.h>
 #include <vector>
 #include <string>
@@ -23,49 +22,57 @@ class Texture;
 class GraphicEngine
 {
 public:
-	GraphicEngine(const Window* pWindow);
-	~GraphicEngine();
+    GraphicEngine(const Window* pWindow);
+    ~GraphicEngine();
 
-	void BeginDraw();
-	void RenderFrame(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix);
-	void Display();
+    // ------------------- Frame -------------------
+    void BeginDraw();
+    void RenderFrame(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix);
+    void Display();
 
-	Geometry* CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color);
-	ObjModel* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
-	Mesh* CreateMesh(Geometry* pGeometry);
-	Material* CreateMaterial(uint32 psoFlags);
-	Texture* CreateTexture(std::string& filePath, const char* extension);
+    // ------------------- Geometry / Mesh -------------------
+    Geometry* CreatePrimitiveGeometry(PrimitiveGeometryType primitiveType, Color color);
+    ObjModel* CreateGeometryFromFile(const char* meshPath, const char* extension, Color color = Color::White);
+    Mesh* CreateMesh(Geometry* pGeometry);
+    Material* CreateMaterial(uint32 psoFlags);
+    Texture* CreateTexture(std::string& filePath, const char* extension);
+    void SetColor(Geometry* pGeometry, Color c);
 
-	void SetColor(Geometry* pGeometry, Color c);
+    // ------------------- Camera -------------------
+    void UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up,
+        float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar,
+        Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix);
 
-	void UpdateCameraAt(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix);
-	void UpdateCameraTo(Vector3 const& position, Vector3 const& target, Vector3 const& up, float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar, Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix);
+    void UpdateCameraTo(Vector3 const& position, Vector3 const& target, Vector3 const& up,
+        float32 viewWidth, float32 viewHeight, float32 fov, float32 cNear, float32 cFar,
+        Matrix4x4& projectionMatrix, Matrix4x4& viewMatrix);
 
-	Mesh* CreateMeshDeferred(Geometry* pGeometry);
-	void ProcessPendingUploads();
-    
     void BindFrameConstants();
     UINT64 GetFrameCBAddress() const;
 
+    // ------------------- Deferred Mesh Uploads -------------------
+    Mesh* CreateMeshDeferred(Geometry* pGeometry);
+    void ProcessPendingUploads();
 
-	std::vector<RenderTarget*> GetRenderTargets() const;
-	RenderTarget* GetMainRenderTarget() const;
-	Render* GetRender();
+    // ------------------- RenderTarget Access -------------------
+    std::vector<RenderTarget*> GetRenderTargets() const;
+    RenderTarget* GetMainRenderTarget() const;
+    Render* GetRender();
+
     void RecreateOffscreenRT(uint32 width, uint32 height);
-
-	void SetWireframe(bool wireframe);
+    void SetWireframe(bool wireframe);
 
 public:
-	std::vector<Mesh*> m_pendingMeshUploads;
+    std::vector<Mesh*> m_pendingMeshUploads;
 
-	ResourcesCache<Texture> m_textureCache;
-	ResourcesCache<Geometry> m_geometryCache;
-	ResourcesCache<ObjModel> m_objCache;
-	ResourcesCache<Mesh> m_meshCache;
+    ResourcesCache<Texture> m_textureCache;
+    ResourcesCache<Geometry> m_geometryCache;
+    ResourcesCache<ObjModel> m_objCache;
+    ResourcesCache<Mesh> m_meshCache;
 
 private:
-	Render* m_pRender = nullptr;
+    Render* m_pRender = nullptr;
     RenderTarget* m_pOffscreenRT = nullptr;
 };
 
-#endif // !GRAPHIC_ENGINE_INCLUDE__H
+#endif // GRAPHIC_ENGINE_INCLUDE__H

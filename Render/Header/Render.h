@@ -3,67 +3,60 @@
 
 #include <Render/Header/UploadBuffer.h>
 
-
 class Window;
 class RenderResources;
 class RenderTarget;
-
 class Mesh;
 class Material;
 
-
-
-struct CameraCB;
-
-
-
 struct WindowResizeInfo
 {
-	uint32 width;
-	uint32 height;
+    uint32 width;
+    uint32 height;
 };
 
 class Render
 {
 public:
-	Render(const Window* pWindow);
-	~Render();
+    Render(const Window* pWindow);
+    ~Render();
 
-    void SetOffscreenRenderTarget(RenderTarget* rt) { m_pOffscreenRT = rt; }
+    void SetOffscreenRenderTarget(RenderTarget* rt);
 
-	void Clear();
-	void Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix);
-	void Display();
+    void BeginFrame();
+    void Draw(Mesh* mesh, Material* material, DirectX::XMFLOAT4X4 const& world);
+    void EndFrame();
 
-	RenderResources* GetRenderResources();
+    RenderResources* GetRenderResources();
 
-	void SetNeedsResizeWindow() { m_needsResizeWindow = true; }
-	void SetResizeWindow(WindowResizeInfo resize) { m_resizeInfo = resize; }
+    void RequestResizeWindow(WindowResizeInfo info);
+    void RequestResizeRT(WindowResizeInfo info);
 
-	void SetNeedsResizeRT() { m_needsResizeRT = true; }
-	void SetResizeRT(WindowResizeInfo resize) { m_resizeRTInfo = resize; }
+    void SetWireframe(bool wireframe);
 
-	void SetWireframe(bool wireframe);
-
-private:
-	void ResizeWindow();
+    UploadBuffer<CameraCB>* GetCameraCB() const { return m_cameraCB; };
+	RenderTarget* GetOffscreenRenderTarget() const { return m_offscreenRT; };
 
 private:
-	RenderResources* m_pRenderResources = nullptr;
+    void ResizeIfNeeded();
 
-    RenderTarget* m_pOffscreenRT = nullptr;
+    void Transition(ID3D12GraphicsCommandList* cmd, ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, RenderTarget* pRenderTarget = nullptr);
 
-	UploadBuffer<CameraCB>* m_pCbCurrentViewProjInstance;
+private:
+    RenderResources* m_resources = nullptr;
+    RenderTarget* m_offscreenRT = nullptr;
 
-	bool m_needsResizeWindow = false;
-	WindowResizeInfo m_resizeInfo = {};
-	bool m_needsResizeRT = false;
-	WindowResizeInfo m_resizeRTInfo = {};
+    UploadBuffer<CameraCB>* m_cameraCB = nullptr;
 
-	bool m_isWireframe = false;
+    bool m_needsResizeWindow = false;
+    bool m_needsResizeRT = false;
 
-	friend class GraphicEngine;
+    WindowResizeInfo m_windowResize = {};
+    WindowResizeInfo m_rtResize = {};
+
+	
+
+    bool m_wireframe = false;
 };
 
-#endif // !RENDER_INCLUDE__H
-
+#endif

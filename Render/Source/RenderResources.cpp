@@ -168,6 +168,11 @@ RenderResources::~RenderResources()
 		m_fenceEvent = nullptr;
 	}
 
+	if (PSOManager::GetInstance())
+	{
+		delete PSOManager::GetInstance();
+	}
+
 	if (m_pDevice) { m_pDevice->Release(); m_pDevice = nullptr; }
 	Utils::DebugWarning("Device destroyed");
 	if (m_pAdapter) { m_pAdapter->Release(); m_pAdapter = nullptr; }

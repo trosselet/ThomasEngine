@@ -10,213 +10,232 @@
 #include <Render/Header/Material.h>
 
 
-Render::Render(const Window* pWindow)
+Render::Render(const Window* window)
 {
-	m_pRenderResources = NEW RenderResources(pWindow->GetHWND(), pWindow->GetWidth(), pWindow->GetHeight());
-	m_pRenderResources->Resize(pWindow->GetWidth(), pWindow->GetHeight());
+    m_resources = NEW RenderResources(window->GetHWND(),window->GetWidth(),window->GetHeight());
 
-	m_pCbCurrentViewProjInstance = NEW UploadBuffer<CameraCB>(m_pRenderResources->GetDevice(), 1, 1);
+    m_resources->Resize(window->GetWidth(), window->GetHeight());
+
+    m_cameraCB = NEW UploadBuffer<CameraCB>(m_resources->GetDevice(), 1, 1);
 }
+
 
 Render::~Render()
 {
-	if (m_pCbCurrentViewProjInstance)
-	{
-		delete m_pCbCurrentViewProjInstance;
-		m_pCbCurrentViewProjInstance = nullptr;
-	}
-
-    if (m_pOffscreenRT)
+    if (m_cameraCB)
     {
-        delete m_pOffscreenRT;
-        m_pOffscreenRT = nullptr;
+        delete m_cameraCB;
+        m_cameraCB = nullptr;
     }
 
-    if (PSOManager::GetInstance())
+    if (m_resources)
+        m_resources->WaitForGpu();
+
+    if (m_offscreenRT)
     {
-        delete PSOManager::GetInstance();
+        delete m_offscreenRT;
+        m_offscreenRT = nullptr;
     }
 
-	if (m_pRenderResources)
-	{
-		delete m_pRenderResources;
-		m_pRenderResources = nullptr;
-	}
-
+    if (m_resources)
+    {
+        delete m_resources;
+        m_resources = nullptr;
+    }
 }
 
-void Render::Clear()
+
+void Render::BeginFrame()
 {
-    if (!m_pRenderResources->ResetCommandList())
+    ResizeIfNeeded();
+
+    if (!m_resources->ResetCommandList())
         return;
 
-    ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
+    ID3D12GraphicsCommandList* cmd = m_resources->GetCommandList();
 
-    const float clearColor[4] = { 0,0,0,1 };
-     
-    m_pOffscreenRT->Transition(cmd, D3D12_RESOURCE_STATE_RENDER_TARGET);
-     
+	if (!m_offscreenRT)
+        return;
 
-	D3D12_VIEWPORT viewport = m_pOffscreenRT->GetViewport();
-	D3D12_RECT scissor = m_pOffscreenRT->GetScissor();
+	if (m_offscreenRT->GetCurrentRTRenderState() != D3D12_RESOURCE_STATE_COMMON)
+    {
+        Transition(cmd, m_offscreenRT->GetColor(), m_offscreenRT->GetCurrentRTRenderState(), D3D12_RESOURCE_STATE_COMMON, m_offscreenRT);
+    }
+    // Transition RT offscreen
+    Transition(cmd, m_offscreenRT->GetColor(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_RENDER_TARGET, m_offscreenRT);
 
+    // Setup viewport / scissor
+    cmd->RSSetViewports(1, &m_offscreenRT->GetViewport());
+    cmd->RSSetScissorRects(1, &m_offscreenRT->GetScissor());
 
-    cmd->RSSetViewports(1, &viewport);
-    cmd->RSSetScissorRects(1, &scissor);
+    // Bind RT
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_offscreenRT->GetRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_offscreenRT->HasDepth() ? m_offscreenRT->GetDSV() : D3D12_CPU_DESCRIPTOR_HANDLE{};
 
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_pOffscreenRT->GetRTV();
-    D3D12_CPU_DESCRIPTOR_HANDLE dsv = m_pOffscreenRT->GetDSV();
+    cmd->OMSetRenderTargets(1, &rtv, FALSE,m_offscreenRT->HasDepth() ? &dsv : nullptr);
 
-    cmd->OMSetRenderTargets(1, &rtv, FALSE, m_pOffscreenRT->HasDepth() ? &dsv : nullptr);
-
+    // Clear
+    const float clearColor[4] = { 0, 0, 0, 1 };
     cmd->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 
-    if (m_pOffscreenRT->HasDepth())
-    {
-        cmd->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-    }
-     
-    auto srv = m_pOffscreenRT->GetSRV();
-    assert(srv.ptr != 0);
+    if (m_offscreenRT->HasDepth())
+        cmd->ClearDepthStencilView(dsv,D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-    ID3D12DescriptorHeap* heap = m_pRenderResources->GetCbvSrvUavDescriptorHeap();
+    // Root & heaps
+    ID3D12DescriptorHeap* heap = m_resources->GetCbvSrvUavDescriptorHeap();
+
     cmd->SetDescriptorHeaps(1, &heap);
-
     cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
-    
+
     cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void Render::Draw(Mesh* pMesh, Material* pMaterial, DirectX::XMFLOAT4X4 const& objectWorldMatrix)
+
+void Render::Draw( Mesh* mesh, Material* material, DirectX::XMFLOAT4X4 const& world)
 {
-    if (!pMesh) return;
+    if (!mesh || !material)
+        return;
 
-    if (m_isWireframe)
-    {
-        pMaterial->sSetWireframe = m_isWireframe;
-    }
-    else
-    {
-        pMaterial->sSetWireframe = m_isWireframe;
-	}
+    ID3D12GraphicsCommandList* cmd = m_resources->GetCommandList();
 
-    ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
+    material->sSetWireframe = m_wireframe;
+    cmd->SetPipelineState(material->GetPSO());
 
-    cmd->SetPipelineState(pMaterial->GetPSO());
+    material->UpdateWorldConstantBuffer(DirectX::XMLoadFloat4x4(&world));
+    material->UpdateMaterialConstantBuffer();
 
-    // Upload matrices
-    pMaterial->UpdateWorldConstantBuffer(DirectX::XMLoadFloat4x4(&objectWorldMatrix));
-    pMaterial->UpdateMaterialConstantBuffer();
+    auto vb = mesh->GetVertexBuffer();
+    auto ib = mesh->GetIndexBuffer();
 
-    // VB / IB
-    auto vb = pMesh->GetVertexBuffer();
-    auto ib = pMesh->GetIndexBuffer();
     cmd->IASetVertexBuffers(0, 1, &vb);
     cmd->IASetIndexBuffer(&ib);
 
-    // SRV t2
-    pMaterial->UpdateTexture(3, 2);
+    material->UpdateTexture(3, 2);
 
-    // CBV root params
-    cmd->SetGraphicsRootConstantBufferView(0, m_pCbCurrentViewProjInstance->GetResource()->GetGPUVirtualAddress());
-    cmd->SetGraphicsRootConstantBufferView(1, pMaterial->GetUploadBuffer()->GetResource()->GetGPUVirtualAddress());
+    cmd->SetGraphicsRootConstantBufferView( 0, m_cameraCB->GetResource()->GetGPUVirtualAddress());
 
+    cmd->SetGraphicsRootConstantBufferView( 1, material->GetUploadBuffer()->GetResource()->GetGPUVirtualAddress());
 
-    cmd->DrawIndexedInstanced(pMesh->GetIndexCount(), 1, 0, 0, 0);
-
-
+    cmd->DrawIndexedInstanced( mesh->GetIndexCount(), 1, 0, 0, 0);
 }
 
-void Render::Display()
+
+void Render::EndFrame()
 {
-    ID3D12GraphicsCommandList* cmd = m_pRenderResources->GetCommandList();
+    ID3D12GraphicsCommandList* cmd = m_resources->GetCommandList();
 
-    m_pOffscreenRT->Transition(cmd, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    // Offscreen -> SRV
+    Transition(cmd, m_offscreenRT->GetColor(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, m_offscreenRT);
 
-    auto backBuffer = m_pRenderResources->GetCurrentRenderTarget();
-    D3D12_RESOURCE_BARRIER bbBarrier = {};
-    bbBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    bbBarrier.Transition.pResource = backBuffer;
-    bbBarrier.Transition.Subresource = 0;
-    bbBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    bbBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    cmd->ResourceBarrier(1, &bbBarrier);
+    // Backbuffer -> RT
+    ID3D12Resource* backBuffer = m_resources->GetCurrentRenderTarget();
 
-    D3D12_CPU_DESCRIPTOR_HANDLE bbRTV = m_pRenderResources->GetCurrentRTV();
-    D3D12_CPU_DESCRIPTOR_HANDLE bbDSV = m_pRenderResources->GetCurrentDSV();
-    cmd->OMSetRenderTargets(1, &bbRTV, FALSE, &bbDSV);
+    Transition(cmd, backBuffer, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	D3D12_VIEWPORT viewport = m_pRenderResources->GetViewport();
-	D3D12_RECT scissor = m_pRenderResources->GetRect();
+    // Bind backbuffer
+    D3D12_CPU_DESCRIPTOR_HANDLE bbRTV = m_resources->GetCurrentRTV();
+
+    cmd->OMSetRenderTargets(1, &bbRTV, FALSE, nullptr);
+
+	auto viewport = m_resources->GetViewport();
+	auto rect = m_resources->GetRect();
 
     cmd->RSSetViewports(1, &viewport);
-    cmd->RSSetScissorRects(1, &scissor);
+    cmd->RSSetScissorRects(1, &rect);
 
-    ID3D12DescriptorHeap* heaps[] = { m_pRenderResources->GetCbvSrvUavDescriptorHeap() };
-    cmd->SetDescriptorHeaps(1, heaps);
+    // Post-process PSO
+    PSOSettings pso = {};
+    pso.flags = Utils::PSOFlags::PostProcess;
 
-    cmd->SetGraphicsRootSignature(PSOManager::GetInstance()->GetRootSignature());
+    cmd->SetPipelineState(PSOManager::GetInstance()->GetPSO( L"postProcess.hlsl", pso));
 
-    PSOSettings postProcessSettings = {};
-    postProcessSettings.flags = Utils::PSOFlags::PostProcess | Utils::PSOFlags::AlphaBlend;
+    cmd->SetGraphicsRootDescriptorTable(3, m_offscreenRT->GetSRV());
 
-    cmd->SetPipelineState(PSOManager::GetInstance()->GetPSO(L"postProcess.hlsl", postProcessSettings));
-
-    cmd->SetGraphicsRootDescriptorTable(3, m_pOffscreenRT->GetSRV());
-
-    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     cmd->DrawInstanced(3, 1, 0, 0);
 
-    D3D12_RESOURCE_BARRIER toPresent = {};
-    toPresent.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    toPresent.Transition.pResource = backBuffer;
-    toPresent.Transition.Subresource = 0;
-    toPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    toPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    cmd->ResourceBarrier(1, &toPresent);
+    // Backbuffer -> Present
+    Transition(cmd, backBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
     cmd->Close();
-    m_pRenderResources->ExecuteCommandList();
-    m_pRenderResources->Present(false);
-    m_pRenderResources->WaitForGpu();
-
-    ResizeWindow();
-
+    m_resources->ExecuteCommandList();
+    m_resources->Present(false);
+    m_resources->WaitForGpu();
+    
 }
+
 
 RenderResources* Render::GetRenderResources()
 {
-	return m_pRenderResources;
+	return m_resources;
 }
 
 void Render::SetWireframe(bool wireframe)
 {
-	m_isWireframe = wireframe;
+	m_wireframe = wireframe;
 }
 
-void Render::ResizeWindow()
+void Render::ResizeIfNeeded()
 {
     if (m_needsResizeWindow)
     {
-		m_needsResizeWindow = false;
-
-		m_pRenderResources->Resize(m_resizeInfo.width, m_resizeInfo.height);
+        m_needsResizeWindow = false;
+        m_resources->Resize(m_windowResize.width, m_windowResize.height);
     }
 
     if (m_needsResizeRT)
     {
-		m_needsResizeRT = false;
+        m_needsResizeRT = false;
 
-		m_pRenderResources->WaitForGpu();
+        m_resources->WaitForGpu();
 
-        if (m_pOffscreenRT)
-        {
-            delete m_pOffscreenRT;
-            m_pOffscreenRT = nullptr;
-        }
+        delete m_offscreenRT;
+        m_offscreenRT = nullptr;
 
-        m_pOffscreenRT = NEW RenderTarget(GetRenderResources(), m_resizeRTInfo.width, m_resizeRTInfo.height);
+        RenderTargetDesc desc = {};
+        desc.width = m_rtResize.width;
+        desc.height = m_rtResize.height;
+        desc.colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.depthFormat = DXGI_FORMAT_D32_FLOAT;
 
-        SetOffscreenRenderTarget(m_pOffscreenRT);
+        m_offscreenRT = NEW RenderTarget(m_resources, desc);
     }
+}
+
+
+void Render::Transition(ID3D12GraphicsCommandList* cmd, ID3D12Resource* res, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after, RenderTarget* pRenderTarget)
+{
+    if (before == after)
+        return;
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = res;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = before;
+    barrier.Transition.StateAfter = after;
+
+    if (pRenderTarget != nullptr)
+    {
+		pRenderTarget->SetCurrentRTRenderState(after);
+	}
+
+    cmd->ResourceBarrier(1, &barrier);
+}
+
+void Render::SetOffscreenRenderTarget(RenderTarget* rt)
+{
+    m_offscreenRT = rt;
+}
+
+void Render::RequestResizeWindow(WindowResizeInfo info)
+{
+    m_windowResize = info;
+    m_needsResizeWindow = true;
+}
+
+void Render::RequestResizeRT(WindowResizeInfo info)
+{
+    m_rtResize = info;
+    m_needsResizeRT = true;
 }

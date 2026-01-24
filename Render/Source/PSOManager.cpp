@@ -257,6 +257,9 @@ ID3DBlob* PSOManager::CompileShader(const std::wstring& path, const char* target
 	ID3DBlob* compiledShader;
 	ID3DBlob* errorBlob;
 
+	if (target == nullptr)
+		target = "ps_5_0";
+
 	HRESULT hr = D3DCompileFromFile(path.c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint, target, flags, 0, &compiledShader, &errorBlob);
 
 	if (FAILED(hr))

@@ -82,7 +82,7 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pObjMeshRendererTest.SetMeshFile("Female/Female.obj", static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pObj->SetName("Obj");*/
 
-    for (int i = 0; i < 100; i+=10)
+    for (int i = 0; i < 10000; i+=5)
     {
         GameObject* const pObj1 = NEW GameObject(scene);
         pObj1->transform.SetPosition({ i + 0.0f, 0.0f, 0.0f });

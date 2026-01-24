@@ -134,6 +134,7 @@ void GameManager::GameLoop()
 		}
 
 		printf("\033[%d;%dH\033[2K  [ENGINE] Frame Time: %d fps", 1, 0, static_cast<int>(fps));
+		printf("\033[%d;%dH\033[2K  [ENGINE] Game Loop: %f", 12, 0, m_deltaTime);
 
 		m_accumulator += m_deltaTime;
 

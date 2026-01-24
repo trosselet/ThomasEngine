@@ -65,6 +65,24 @@ namespace Utils
 		os << L"\n";
 		OutputDebugStringW(os.str().c_str());
 	}
+	
+	template<typename T>
+	inline void DebugInfo(const T& message)
+	{
+		std::wostringstream os;
+		os << L"[INFO]: " << message << L"\n";
+		OutputDebugStringW(os.str().c_str());
+	}
+
+	template<typename T, typename... Args>
+	inline void DebugInfo(const T& first, const Args&... args)
+	{
+		std::wostringstream os;
+		os << L"[INFO]: " << first;
+		((os << args), ...);
+		os << L"\n";
+		OutputDebugStringW(os.str().c_str());
+	}
 #pragma endregion
 
 #pragma region Debug
