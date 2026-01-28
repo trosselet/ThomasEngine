@@ -4,6 +4,7 @@
 
 #include <Engine/Header/MeshRenderer.h>
 #include <Engine/Header/Camera.h>
+#include <Engine/Header/Rigidbody3D.h>
 #include <Engine/Header/Scene.h>
 #include <Engine/Header/IScript.h>
 #include <Engine/Header/ScriptSystem.h>
@@ -63,9 +64,9 @@ private:
 	Scene* m_pScene = nullptr;
 
 	GameObject* m_pParent = nullptr;
+	std::vector<IScript*> m_scripts;
 	std::vector<GameObject*> m_pChildren;
 	std::unordered_map<uint16, Component*> m_components;
-	std::vector<IScript*> m_scripts;
 
 	uint64 m_componentBitmask = 0;
 
@@ -167,6 +168,29 @@ inline void GameObject::RemoveComponent<Camera>()
 {
 	assert(HasComponent<Camera>());
 	m_components[Camera::Tag]->Destroy();
+}
+
+template <>
+inline Rigidbody3D& GameObject::AddComponent<Rigidbody3D>()
+{
+	assert((HasComponent<Rigidbody3D>() == false));
+
+	Rigidbody3D* const pRigidbody3d = NEW Rigidbody3D();
+	m_pScene->m_rigidbody3d.push_back(pRigidbody3d);
+	pRigidbody3d->m_pOwner = this;
+	m_pScene->m_rigidbody3dToCreate.push_back(pRigidbody3d);
+
+	m_components[Rigidbody3D::Tag] = pRigidbody3d;
+	m_componentBitmask |= 1 << (Rigidbody3D::Tag - 1);
+
+	return *pRigidbody3d;
+}
+
+template <>
+inline void GameObject::RemoveComponent<Rigidbody3D>()
+{
+	assert(HasComponent<Rigidbody3D>());
+	m_components[Rigidbody3D::Tag]->Destroy();
 }
 
 #endif // !GAMEOBJECT_INCLUDE__H
