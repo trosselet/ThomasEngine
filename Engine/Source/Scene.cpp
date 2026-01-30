@@ -6,6 +6,7 @@
 #include <Engine/Header/RenderSystem.h>
 #include <Engine/Header/Camera.h>
 #include <Engine/Header/Rigidbody3D.h>
+#include <Engine/Header/PhysicsSystem.h>
 
 #include <Render/Header/Window.h>
 #include <Render/Header/GraphicEngine.h>
@@ -156,6 +157,8 @@ void Scene::HandleCreation()
     {
         pRigidbody3D->m_toBeCreated = false;
         pRigidbody3D->m_created = true;
+
+        GameManager::GetPhysicsSystem().m_rigidbody3d.push_back(pRigidbody3D);
     }
     m_rigidbody3dToCreate.clear();
 }

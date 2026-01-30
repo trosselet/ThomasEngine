@@ -82,14 +82,19 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR cmdLine, int cmdShow
     pObjMeshRendererTest.SetMeshFile("Female/Female.obj", static_cast<uint32>(Utils::PSOFlags::DepthEnable | Utils::PSOFlags::DepthWrite));
     pObj->SetName("Obj");*/
 
-    for (int i = 0; i < 10000; i+=5)
+    for (int i = 0; i < 1; i+=1)
     {
         GameObject* const pObj1 = NEW GameObject(scene);
         pObj1->transform.SetPosition({ i + 0.0f, 0.0f, 0.0f });
         pObj1->transform.RotateCartesian({ 0.0f, 0.0f, 0.0f });
         pObj1->transform.SetScaling(Vector3{ 0.01f, 0.01f, 0.01f });
+
         MeshRenderer& pObj1MeshRendererTest = pObj1->AddComponent<MeshRenderer>();
         pObj1MeshRendererTest.SetMeshFile("Dying.fbx");
+
+        Rigidbody3D& pRigidbody3D = pObj1->AddComponent<Rigidbody3D>();
+        pRigidbody3D.m_mass = 1000;
+
         pObj1->SetName("Obj2");
     }
 

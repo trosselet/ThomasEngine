@@ -1,5 +1,2 @@
-#include <Rigidbody3D.h>
-
-static constexpr float GravitationalConstant = 9.81f;
-
-using G = GravitationalConstant;
+#include <Engine/pch.h>
+#include <Engine/Header/Rigidbody3D.h>

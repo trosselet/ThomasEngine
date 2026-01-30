@@ -24,3 +24,6 @@ using Vector4 = Vector<float32, 4>;
 using Matrix4x4 = Matrix4x4;
 
 constexpr float32 PI = 3.14159265358979323846;
+
+#define GravitationalConstant {0.0f, 9.81f, 0.0f}
+

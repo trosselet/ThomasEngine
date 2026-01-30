@@ -8,6 +8,7 @@
 
 class Window;
 class RenderSystem;
+class PhysicsSystem;
 class Scene;
 class ScriptSystem;
 
@@ -28,6 +29,7 @@ public:
 	static float32& GetDeltaTime();
 
 	static RenderSystem& GetRenderSystem();
+	static PhysicsSystem& GetPhysicsSystem();
 	static ScriptSystem& GetScriptSystem();
 
 	static void SetWireframe(bool wireframe);
@@ -52,6 +54,7 @@ private:
 
 	Window* m_pWindow = nullptr;
 	RenderSystem* m_pRenderSystem = nullptr;
+	PhysicsSystem* m_pPhysicsSystem = nullptr;
 	ScriptSystem* m_pScriptSystem = nullptr;
 
 	std::vector<Scene>  m_scenes;

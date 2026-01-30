@@ -3,6 +3,7 @@
 #include <Engine/Header/RenderSystem.h>
 #include <Engine/Header/Scene.h>
 #include <Engine/Header/ScriptSystem.h>
+#include <Engine/Header/PhysicsSystem.h>
 
 #include <Render/Header/Window.h>
 #include <Render/Header/GraphicEngine.h>
@@ -10,7 +11,8 @@
 GameManager::GameManager(HINSTANCE hInstance) :
 	m_pWindow(NEW Window(hInstance)),
 	m_pRenderSystem(NEW RenderSystem(m_pWindow->GetGraphicEngine())),
-	m_pScriptSystem(NEW ScriptSystem())
+	m_pScriptSystem(NEW ScriptSystem()),
+	m_pPhysicsSystem(NEW PhysicsSystem())
 {
 	m_lastTime = std::chrono::steady_clock::now();
 }
@@ -36,7 +38,8 @@ GameManager::~GameManager()
 	delete m_pScriptSystem;
 	m_pScriptSystem = nullptr;
 
-
+	delete m_pPhysicsSystem;
+	m_pPhysicsSystem = nullptr;
 
 	delete m_pRenderSystem;
 	m_pRenderSystem = nullptr;
@@ -96,6 +99,11 @@ float32& GameManager::GetDeltaTime()
 RenderSystem& GameManager::GetRenderSystem()
 {
 	return *m_pInstance->m_pRenderSystem;
+}
+
+PhysicsSystem& GameManager::GetPhysicsSystem()
+{
+	return *m_pInstance->m_pPhysicsSystem;
 }
 
 ScriptSystem& GameManager::GetScriptSystem()
@@ -202,10 +210,12 @@ void GameManager::GameLoop()
 void GameManager::Update()
 {
 	m_pWindow->Update();
+	m_pPhysicsSystem->PhysicsUpdate();
 }
 
 void GameManager::FixedUpdate()
 {
+	
 	m_pScriptSystem->OnFixedUpdate();
 }
 
